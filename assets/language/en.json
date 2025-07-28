@@ -1,0 +1,14 @@
+{
+  "select_language": "Select Language",
+  "save": "Save",
+  "you_can_change_language": "You can change language later",
+  "select_a_language": "Select a language",
+  "home": "Home",
+  "back_to_home": "Back to Home",
+  "next": "Next",
+
+  "select_role": "Select Your Role",
+  "farmer": "Farmer",
+  "buyer": "Buyer",
+  "general_user": "General User"
+}
