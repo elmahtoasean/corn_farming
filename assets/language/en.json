@@ -10,5 +10,26 @@
   "select_role": "Select Your Role",
   "farmer": "Farmer",
   "buyer": "Buyer",
-  "general_user": "General User"
+  "general_user": "General User",
+
+  "user_info": "User Info",
+  "soil_type": "Soil Type and Quality",
+  "growth_conditions": "Growth Conditions",
+  "seed_type": "Seed Quality",
+  "watering": "Watering and Fertilization",
+  "pest": "Pest and Disease Management",
+  "nursing": "Nursing Corn Plants",
+  "grow": "Growth of Corn Plants",
+  "flower": "Flower Blooming and Fruit Developing",
+  "ripe": "Ripening of Corns",
+  "fruit_collect":"Collecting Corns",
+  "market": "Corn Distribution to Market",
+  "corn_facts": "Interesting Facts about Corn",
+  "tool_guide": "Introduction to Farming Tools",
+  "home_page": "Home Page",
+
+
+  "app_name": "Agri ভুট্টা",
+  "switch_to_general": "Switch to General User",
+  "switch_to_farmer": "Switch to Farmer"
 }

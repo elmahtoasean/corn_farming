@@ -24,13 +24,10 @@ class _RoleScreenState extends State<RoleScreen> {
     },
   ];
 
-  void selectRole(String key) async {
+  void selectRole(String key) {
     setState(() {
       selectedRoleKey = key;
     });
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_role', key);
   }
 
   @override
@@ -88,13 +85,14 @@ class _RoleScreenState extends State<RoleScreen> {
                                 onTap: () => selectRole(role['key']!),
                                 child: Stack(
                                   children: [
-                                    // Center the content inside the card
                                     Center(
                                       child: Padding(
                                         padding: const EdgeInsets.all(12),
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             Expanded(
                                               child: Lottie.asset(
@@ -117,8 +115,6 @@ class _RoleScreenState extends State<RoleScreen> {
                                         ),
                                       ),
                                     ),
-
-                                    // Tick icon positioned top-right, does not affect layout
                                     if (isSelected)
                                       const Positioned(
                                         top: 8,
@@ -141,10 +137,13 @@ class _RoleScreenState extends State<RoleScreen> {
                   const SizedBox(height: 40),
                   if (selectedRoleKey != null)
                     ElevatedButton.icon(
-                      onPressed: () {
-                        Get.toNamed(RouteHelper.getHomeRoute());
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('user_role', selectedRoleKey!);
+                        Get.offAllNamed(RouteHelper.getHomeRoute());
                       },
-                      icon: const Icon(Icons.navigate_next, color: Colors.white),
+                      icon:
+                          const Icon(Icons.navigate_next, color: Colors.white),
                       label: Text(
                         'next'.tr,
                         style: const TextStyle(color: Colors.white),

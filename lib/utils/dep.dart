@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:corn_farming/controller/localization_controller.dart';
 import 'package:corn_farming/models/language_model.dart';
 import 'package:flutter/services.dart';
