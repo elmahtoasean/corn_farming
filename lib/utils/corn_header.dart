@@ -100,37 +100,9 @@ class CornHeaderShell extends StatelessWidget {
                 ),
                 SafeArea(
                   bottom: false,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth.isFinite
-                          ? constraints.maxWidth
-                          : MediaQuery.of(context).size.width;
-                      final direction = Directionality.of(context);
-                      final resolvedPadding =
-                          contentPadding.resolve(direction);
-
-                      EdgeInsets adaptivePadding = resolvedPadding;
-                      if (width < 360) {
-                        adaptivePadding = EdgeInsets.fromLTRB(
-                          resolvedPadding.left.clamp(0.0, 12.0),
-                          resolvedPadding.top.clamp(0.0, 14.0),
-                          resolvedPadding.right.clamp(0.0, 12.0),
-                          resolvedPadding.bottom.clamp(0.0, 14.0),
-                        );
-                      } else if (width < 420) {
-                        adaptivePadding = EdgeInsets.fromLTRB(
-                          resolvedPadding.left.clamp(0.0, 14.0),
-                          resolvedPadding.top.clamp(0.0, 14.0),
-                          resolvedPadding.right.clamp(0.0, 14.0),
-                          resolvedPadding.bottom.clamp(0.0, 14.0),
-                        );
-                      }
-
-                      return Padding(
-                        padding: adaptivePadding,
-                        child: child,
-                      );
-                    },
+                  child: Padding(
+                    padding: contentPadding,
+                    child: child,
                   ),
                 ),
               ],
