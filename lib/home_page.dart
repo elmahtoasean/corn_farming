@@ -70,14 +70,16 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _configureVoice() async {
     await _tts.setVolume(1.0);
-    await _tts.setSpeechRate(0.45);
+    final localeCode = Get.locale?.languageCode.toLowerCase();
+    final speechRate = localeCode == 'bn' ? 0.36 : 0.45;
+    await _tts.setSpeechRate(speechRate);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
-    final languageCode =
-        await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
-    try {
-      await _tts.setLanguage(languageCode);
-    } catch (_) {}
+    final languageCode = await configureTtsLanguage(
+      _tts,
+      Get.locale,
+      defaultLanguage: 'en-US',
+    );
     await configureTtsVoice(_tts, languageCode, locale: Get.locale);
   }
 
@@ -507,70 +509,95 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
 
+    final menuButton = Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        onPressed: onMenuTap,
+        icon: const Icon(Icons.menu_rounded),
+        color: theme.colorScheme.onPrimary,
+      ),
+    );
+
+    final titleBlock = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'home_appbar_subtitle'.tr,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onPrimary.withOpacity(0.85),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'home_listen_hint'.tr,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onPrimary.withOpacity(0.7),
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+
+    final actions = [modeChip, listenButton, themeToggle];
+
     return CornHeaderShell(
       height: preferredSize.height,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onPrimary.withOpacity(0.16),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: IconButton(
-              onPressed: onMenuTap,
-              icon: const Icon(Icons.menu_rounded),
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 520;
+          final actionsWrap = Wrap(
+            spacing: isCompact ? 10 : 12,
+            runSpacing: isCompact ? 8 : 10,
+            alignment: isCompact ? WrapAlignment.start : WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: actions,
+          );
+
+          final rowChildren = <Widget>[
+            menuButton,
+            const SizedBox(width: 16),
+            Expanded(child: titleBlock),
+          ];
+
+          if (!isCompact) {
+            rowChildren.addAll([
+              const SizedBox(width: 12),
+              Flexible(child: actionsWrap),
+            ]);
+          }
+
+          final headerRow = Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: rowChildren,
+          );
+
+          if (isCompact) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'home_appbar_subtitle'.tr,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.85),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'home_listen_hint'.tr,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.7),
-                    fontSize: 11,
-                  ),
-                ),
+                headerRow,
+                const SizedBox(height: 12),
+                actionsWrap,
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                modeChip,
-                listenButton,
-                themeToggle,
-              ],
-            ),
-          ),
-        ],
+            );
+          }
+
+          return headerRow;
+        },
       ),
     );
   }

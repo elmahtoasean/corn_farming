@@ -57,6 +57,22 @@ Future<bool> _isLanguageSupported(FlutterTts tts, String language) async {
   return true;
 }
 
+Future<bool> _supportsLanguage(FlutterTts tts, String language) async {
+  final attempts = _deduplicatePreservingOrder([
+    language,
+    language.replaceAll('_', '-'),
+    language.replaceAll('-', '_'),
+  ]);
+
+  for (final attempt in attempts) {
+    if (await _isLanguageSupported(tts, attempt)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 String? _matchLanguage(List<String> available, List<String> candidates) {
   final normalizedMap = <String, String>{
     for (final lang in available) lang.toLowerCase(): lang,
@@ -129,6 +145,101 @@ Future<String> resolveTtsLanguage(
       return candidate;
     }
   }
+
+  return defaultLanguage;
+}
+
+bool _didApplyLanguage(dynamic result) {
+  if (result == null) {
+    return true;
+  }
+  if (result is bool) {
+    return result;
+  }
+  if (result is int) {
+    return result == 1;
+  }
+  if (result is String) {
+    return !result.toLowerCase().contains('error');
+  }
+  return true;
+}
+
+Future<String> configureTtsLanguage(
+  FlutterTts tts,
+  Locale? locale, {
+  String defaultLanguage = 'en-US',
+}) async {
+  final resolved =
+      await resolveTtsLanguage(tts, locale, defaultLanguage: defaultLanguage);
+
+  final attempts = <String>[];
+
+  void addAttempt(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isNotEmpty) {
+      attempts.add(trimmed);
+    }
+  }
+
+  addAttempt(resolved);
+  addAttempt(resolved.replaceAll('_', '-'));
+  addAttempt(resolved.replaceAll('-', '_'));
+
+  if (locale != null) {
+    final languageCode = locale.languageCode;
+    final countryCode = locale.countryCode;
+    if (countryCode != null && countryCode.isNotEmpty) {
+      final upper = countryCode.toUpperCase();
+      final lower = countryCode.toLowerCase();
+      addAttempt('$languageCode-$upper');
+      addAttempt('$languageCode_$upper');
+      addAttempt('$languageCode-$lower');
+      addAttempt('$languageCode_$lower');
+    }
+    addAttempt(languageCode);
+
+    final fallbacks =
+        _languageFallbackCandidates[languageCode.toLowerCase()] ?? const [];
+    for (final candidate in fallbacks) {
+      addAttempt(candidate);
+    }
+  }
+
+  final defaultCandidates = [
+    defaultLanguage,
+    defaultLanguage.replaceAll('_', '-'),
+    defaultLanguage.replaceAll('-', '_'),
+    defaultLanguage.split(RegExp(r'[-_]')).first,
+  ];
+
+  for (final candidate in defaultCandidates) {
+    addAttempt(candidate);
+  }
+
+  final dedupedAttempts = _deduplicatePreservingOrder(attempts);
+
+  for (final candidate in dedupedAttempts) {
+    final normalized = candidate.contains('_')
+        ? candidate.replaceAll('_', '-')
+        : candidate;
+    final isSupported = await _supportsLanguage(tts, normalized);
+    if (!isSupported) {
+      continue;
+    }
+    try {
+      final result = await tts.setLanguage(normalized);
+      if (_didApplyLanguage(result)) {
+        return normalized;
+      }
+    } catch (_) {
+      continue;
+    }
+  }
+
+  try {
+    await tts.setLanguage(defaultLanguage);
+  } catch (_) {}
 
   return defaultLanguage;
 }

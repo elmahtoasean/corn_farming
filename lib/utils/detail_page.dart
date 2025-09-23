@@ -129,14 +129,16 @@ class _CornDetailPageState extends State<CornDetailPage> {
 
   Future<void> _configureVoice() async {
     await _tts.setVolume(1.0);
-    await _tts.setSpeechRate(0.45);
+    final localeCode = Get.locale?.languageCode.toLowerCase();
+    final speechRate = localeCode == 'bn' ? 0.36 : 0.45;
+    await _tts.setSpeechRate(speechRate);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
-    final languageCode =
-        await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
-    try {
-      await _tts.setLanguage(languageCode);
-    } catch (_) {}
+    final languageCode = await configureTtsLanguage(
+      _tts,
+      Get.locale,
+      defaultLanguage: 'en-US',
+    );
     await configureTtsVoice(_tts, languageCode, locale: Get.locale);
   }
 
@@ -463,63 +465,88 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
 
+    final backButton = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        onPressed: onBack,
+        icon: const Icon(Icons.arrow_back_rounded),
+        color: Colors.white,
+      ),
+    );
+
+    final titleBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          statusText,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: Colors.white.withOpacity(0.85),
+          ),
+        ),
+      ],
+    );
+
+    final actions = [accentBadge, listenButton, themeToggle];
+
     return CornHeaderShell(
       height: preferredSize.height,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: IconButton(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded),
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 460;
+          final actionsWrap = Wrap(
+            spacing: isCompact ? 10 : 12,
+            runSpacing: isCompact ? 8 : 10,
+            alignment: isCompact ? WrapAlignment.start : WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: actions,
+          );
+
+          final rowChildren = <Widget>[
+            backButton,
+            const SizedBox(width: 14),
+            Expanded(child: titleBlock),
+          ];
+
+          if (!isCompact) {
+            rowChildren.addAll([
+              const SizedBox(width: 12),
+              Flexible(child: actionsWrap),
+            ]);
+          }
+
+          final headerRow = Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: rowChildren,
+          );
+
+          if (isCompact) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  statusText,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withOpacity(0.85),
-                  ),
-                ),
+                headerRow,
+                const SizedBox(height: 12),
+                actionsWrap,
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                accentBadge,
-                listenButton,
-                themeToggle,
-              ],
-            ),
-          ),
-        ],
+            );
+          }
+
+          return headerRow;
+        },
       ),
     );
   }
@@ -559,56 +586,68 @@ class _IntroCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 380;
+          final iconBadge = Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.22),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(accentIcon, color: Colors.white),
+          );
+
+          final introText = Text(
+            intro,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              height: 1.45,
+            ),
+          );
+
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.22),
-                  shape: BoxShape.circle,
+              if (isCompact) ...[
+                iconBadge,
+                const SizedBox(height: 14),
+                introText,
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    iconBadge,
+                    const SizedBox(width: 16),
+                    Expanded(child: introText),
+                  ],
                 ),
-                child: Icon(accentIcon, color: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  intro,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    height: 1.45,
+              if (quickTips.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Text(
+                  'detail_quick_tip_heading'.tr,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: quickTips
+                      .map((tip) => _TipChip(
+                            label: tip,
+                            color: Colors.white,
+                            textColor: theme.colorScheme.primary,
+                          ))
+                      .toList(),
+                ),
+              ],
             ],
-          ),
-          if (quickTips.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            Text(
-              'detail_quick_tip_heading'.tr,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: Colors.white.withOpacity(0.9),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: quickTips
-                  .map((tip) => _TipChip(
-                        label: tip,
-                        color: Colors.white,
-                        textColor: theme.colorScheme.primary,
-                      ))
-                  .toList(),
-            ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
@@ -638,54 +677,67 @@ class _DetailSectionCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 360;
+          final iconBadge = Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(section.icon, color: theme.colorScheme.primary),
+          );
+
+          final titleWidget = Text(
+            section.titleKey.tr,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  shape: BoxShape.circle,
+              if (isCompact) ...[
+                iconBadge,
+                const SizedBox(height: 12),
+                titleWidget,
+              ] else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    iconBadge,
+                    const SizedBox(width: 12),
+                    Expanded(child: titleWidget),
+                  ],
                 ),
-                child: Icon(section.icon, color: theme.colorScheme.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  section.titleKey.tr,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
-                  ),
+              const SizedBox(height: 12),
+              Text(
+                section.descriptionKey.tr,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.85),
+                  height: 1.55,
                 ),
               ),
+              if (section.highlightKeys.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: section.highlightKeys
+                      .map((item) => _TipChip(
+                            label: item.tr,
+                            color: theme.colorScheme.primary.withOpacity(0.12),
+                            textColor: theme.colorScheme.primary,
+                          ))
+                      .toList(),
+                ),
+              ],
             ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            section.descriptionKey.tr,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.85),
-              height: 1.55,
-            ),
-          ),
-          if (section.highlightKeys.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: section.highlightKeys
-                  .map((item) => _TipChip(
-                        label: item.tr,
-                        color: theme.colorScheme.primary.withOpacity(0.12),
-                        textColor: theme.colorScheme.primary,
-                      ))
-                  .toList(),
-            ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
@@ -699,6 +751,16 @@ class _TimelineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark
+        ? Colors.white
+        : theme.colorScheme.onSecondaryContainer.withOpacity(0.95);
+    final detailColor = isDark
+        ? Colors.white.withOpacity(0.9)
+        : theme.colorScheme.onSecondaryContainer.withOpacity(0.85);
+    final iconColor = isDark
+        ? Colors.white
+        : theme.colorScheme.primary.withOpacity(0.9);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -713,13 +775,13 @@ class _TimelineCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.timeline_rounded, color: Colors.white),
+              Icon(Icons.timeline_rounded, color: iconColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   item.titleKey.tr,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
+                    color: titleColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -730,7 +792,7 @@ class _TimelineCard extends StatelessWidget {
           Text(
             item.detailKey.tr,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: detailColor,
               height: 1.45,
             ),
           ),
