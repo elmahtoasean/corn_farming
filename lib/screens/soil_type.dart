@@ -1,4 +1,5 @@
 import 'package:corn_farming/utils/detail_page.dart';
+import 'package:corn_farming/widgets/soil_selector_card.dart';
 import 'package:flutter/material.dart';
 import 'package:corn_farming/controller/localization_controller.dart';
 import 'package:corn_farming/models/language_model.dart';
@@ -71,6 +72,19 @@ class SoilType extends StatelessWidget {
         'soil_resource_records',
       ],
       videoId: 'soil_video_id'.tr,
+      supplementalBuilders: [
+        (context, width) => Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: width > 840 ? 720 : width,
+                ),
+                child: const SoilSelectorCard(),
+              ),
+            ),
+      ],
+      additionalNarrationKeys: const [
+        'soil_selector_narration',
+      ],
     );
   }
 }

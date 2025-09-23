@@ -1,5 +1,7 @@
 import 'package:corn_farming/controller/theme_controller.dart';
+import 'package:corn_farming/utils/corn_header.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,11 +24,14 @@ class _HomePageState extends State<HomePage>
 
   String? userRole;
   bool isLoading = true;
+  final FlutterTts _tts = FlutterTts();
+  bool _isSpeaking = false;
 
   @override
   void initState() {
     super.initState();
     _loadRole();
+    _initTts();
   }
 
   Future<void> _loadRole() async {
@@ -35,6 +40,87 @@ class _HomePageState extends State<HomePage>
       userRole = prefs.getString('user_role') ?? 'general_user';
       isLoading = false;
     });
+  }
+
+  void _initTts() {
+    _tts.setStartHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = true);
+      }
+    });
+    _tts.setCompletionHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+    _tts.setCancelHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+    _tts.setPauseHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+  }
+
+  Future<void> _configureVoice() async {
+    await _tts.setVolume(1.0);
+    await _tts.setSpeechRate(0.45);
+    await _tts.setPitch(1.0);
+    await _tts.awaitSpeakCompletion(true);
+    final locale = Get.locale;
+    if (locale != null && locale.languageCode.toLowerCase() == 'bn') {
+      await _tts.setLanguage('bn-BD');
+    } else {
+      await _tts.setLanguage('en-US');
+    }
+  }
+
+  String _buildNarration(List<Map<String, dynamic>> cards) {
+    final buffer = StringBuffer();
+    buffer.writeln('home_page'.tr);
+    buffer.writeln('home_appbar_subtitle'.tr);
+    if (userRole != null) {
+      final roleLabel = userRole == 'farmer'
+          ? 'role_farmer_label'.tr
+          : 'role_enthusiast_label'.tr;
+      buffer.writeln('home_welcome'.trParams({'role': roleLabel}));
+    }
+    buffer.writeln('home_choose_guide'.tr);
+    buffer.writeln('home_card_hint'.tr);
+    for (final card in cards) {
+      buffer.writeln(card['title'].toString().tr);
+      final summaryKey = card['summary'] as String?;
+      if (summaryKey != null) {
+        buffer.writeln(summaryKey.tr);
+      }
+    }
+    buffer.writeln('home_listen_narration'.tr);
+    return buffer.toString();
+  }
+
+  Future<void> _toggleNarration(List<Map<String, dynamic>> cards) async {
+    if (_isSpeaking) {
+      await _tts.stop();
+      setState(() => _isSpeaking = false);
+      return;
+    }
+    final narration = _buildNarration(cards).trim();
+    if (narration.isEmpty) {
+      return;
+    }
+    await _configureVoice();
+    setState(() => _isSpeaking = true);
+    await _tts.speak(narration);
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    _tts.dispose();
+    super.dispose();
   }
 
   @override
@@ -113,6 +199,8 @@ class _HomePageState extends State<HomePage>
                         onMenuTap: () => setState(() => isSidebarOpen = !isSidebarOpen),
                         onThemeTap: themeController.toggleThemeMode,
                         isDarkMode: themeController.isDarkMode,
+                        onNarrationTap: () => _toggleNarration(cards),
+                        isNarrating: _isSpeaking,
                       ),
                       body: SafeArea(
                         child: LayoutBuilder(
@@ -270,13 +358,17 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback onMenuTap;
   final VoidCallback onThemeTap;
+  final VoidCallback onNarrationTap;
   final bool isDarkMode;
+  final bool isNarrating;
 
   const _CornAppBar({
     required this.title,
     required this.onMenuTap,
     required this.onThemeTap,
+    required this.onNarrationTap,
     required this.isDarkMode,
+    required this.isNarrating,
   });
 
   @override
@@ -285,206 +377,166 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: SizedBox(
-        height: preferredSize.height,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipPath(
-                clipper: _CornAppBarClipper(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.primary.withOpacity(isDark ? 0.55 : 0.4),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.25),
-                        blurRadius: 26,
-                        offset: const Offset(0, 14),
-                      ),
-                    ],
-                  ),
+    final modeChip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.eco_rounded,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isDark ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
-            Positioned(
-              right: -40,
-              top: -30,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
+              Text(
+                'home_card_hint'.tr,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onPrimary.withOpacity(0.75),
+                  fontSize: 11,
                 ),
               ),
-            ),
-            Positioned(
-              left: -30,
-              bottom: -40,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.06),
-                ),
-              ),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.16),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: onMenuTap,
-                        icon: const Icon(Icons.menu_rounded),
-                        color: theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: theme.colorScheme.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'home_appbar_subtitle'.tr,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onPrimary.withOpacity(0.85),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.eco_rounded,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isDark ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                'home_card_hint'.tr,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onPrimary.withOpacity(0.75),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.16),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        tooltip: isDarkMode
-                            ? 'switch_to_light_mode'.tr
-                            : 'switch_to_dark_mode'.tr,
-                        onPressed: onThemeTap,
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) => RotationTransition(
-                            turns: Tween(begin: 0.75, end: 1.0).animate(animation),
-                            child: FadeTransition(opacity: animation, child: child),
-                          ),
-                          child: Icon(
-                            isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
-                            key: ValueKey(isDarkMode),
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final listenButton = Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        tooltip: isNarrating ? 'home_listen_stop'.tr : 'home_listen_start'.tr,
+        onPressed: onNarrationTap,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: Icon(
+            isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
+            key: ValueKey(isNarrating),
+            color: theme.colorScheme.onPrimary,
+          ),
         ),
       ),
     );
-  }
-}
 
-class _CornAppBarClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(
-      size.width * 0.25,
-      size.height,
-      size.width * 0.5,
-      size.height - 28,
+    final themeToggle = Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        tooltip:
+            isDarkMode ? 'switch_to_light_mode'.tr : 'switch_to_dark_mode'.tr,
+        onPressed: onThemeTap,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => RotationTransition(
+            turns: Tween(begin: 0.75, end: 1.0).animate(animation),
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: Icon(
+            isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
+            key: ValueKey(isDarkMode),
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+      ),
     );
-    path.quadraticBezierTo(
-      size.width * 0.8,
-      size.height - 60,
-      size.width,
-      size.height - 20,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
 
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+    return CornHeaderShell(
+      height: preferredSize.height,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onPrimary.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: IconButton(
+              onPressed: onMenuTap,
+              icon: const Icon(Icons.menu_rounded),
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'home_appbar_subtitle'.tr,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'home_listen_hint'.tr,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                modeChip,
+                listenButton,
+                themeToggle,
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DashboardHeader extends StatelessWidget {
