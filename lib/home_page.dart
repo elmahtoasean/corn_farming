@@ -12,7 +12,6 @@ import 'utils/user_cards.dart';
 import 'utils/app_route.dart';
 import 'utils/sidebar.dart';
 import 'utils/tts_utils.dart';
-import 'widgets/narration_toggle_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,8 +22,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  static const String _pageNarrationId = 'home_page_overview';
-
   bool isSidebarOpen = false;
   final Duration duration = const Duration(milliseconds: 300);
 
@@ -32,7 +29,6 @@ class _HomePageState extends State<HomePage>
   bool isLoading = true;
   final FlutterTts _tts = FlutterTts();
   bool _isSpeaking = false;
-  String? _activeNarrationId;
 
   @override
   void initState() {
@@ -55,27 +51,22 @@ class _HomePageState extends State<HomePage>
         setState(() => _isSpeaking = true);
       }
     });
-    _tts.setCompletionHandler(_handleSpeechStopped);
-    _tts.setCancelHandler(_handleSpeechStopped);
-    _tts.setPauseHandler(_handleSpeechStopped);
-  }
-
-  void _handleSpeechStopped() {
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _isSpeaking = false;
-      _activeNarrationId = null;
+    _tts.setCompletionHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+    _tts.setCancelHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+    _tts.setPauseHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
     });
   }
-
-  Future<void> _stopNarration() async {
-    await _tts.stop();
-    _handleSpeechStopped();
-  }
-
-  bool _isNarrating(String id) => _isSpeaking && _activeNarrationId == id;
 
   Future<void> _configureVoice() async {
     await _tts.setVolume(1.0);
@@ -90,53 +81,6 @@ class _HomePageState extends State<HomePage>
       defaultLanguage: 'en-US',
     );
     await configureTtsVoice(_tts, languageCode, locale: Get.locale);
-  }
-
-  Future<void> _speakNarration(String id, String narration) async {
-    final text = narration.trim();
-    if (text.isEmpty) {
-      return;
-    }
-
-    if (_isNarrating(id)) {
-      await _stopNarration();
-      return;
-    }
-
-    await _stopNarration();
-    await _configureVoice();
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _activeNarrationId = id;
-      _isSpeaking = true;
-    });
-
-    await _tts.speak(text);
-  }
-
-  String _cardNarrationId(Map<String, dynamic> card) {
-    return (card['route'] as String?) ?? card['title'].toString();
-  }
-
-  String _buildCardNarration(Map<String, dynamic> card) {
-    final buffer = StringBuffer();
-    buffer.writeln(card['title'].toString().tr);
-    final summaryKey = card['summary'] as String?;
-    if (summaryKey != null) {
-      buffer.writeln(summaryKey.tr);
-    } else {
-      buffer.writeln('home_card_hint'.tr);
-    }
-    return buffer.toString();
-  }
-
-  Future<void> _toggleCardNarration(Map<String, dynamic> card) async {
-    final narration = _buildCardNarration(card);
-    final id = _cardNarrationId(card);
-    await _speakNarration(id, narration);
   }
 
   String _buildNarration(List<Map<String, dynamic>> cards) {
@@ -163,8 +107,18 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _toggleNarration(List<Map<String, dynamic>> cards) async {
-    final narration = _buildNarration(cards);
-    await _speakNarration(_pageNarrationId, narration);
+    if (_isSpeaking) {
+      await _tts.stop();
+      setState(() => _isSpeaking = false);
+      return;
+    }
+    final narration = _buildNarration(cards).trim();
+    if (narration.isEmpty) {
+      return;
+    }
+    await _configureVoice();
+    setState(() => _isSpeaking = true);
+    await _tts.speak(narration);
   }
 
   @override
@@ -250,7 +204,7 @@ class _HomePageState extends State<HomePage>
                         onThemeTap: themeController.toggleThemeMode,
                         isDarkMode: themeController.isDarkMode,
                         onNarrationTap: () => _toggleNarration(cards),
-                        isNarrating: _isNarrating(_pageNarrationId),
+                        isNarrating: _isSpeaking,
                       ),
                       body: SafeArea(
                         child: LayoutBuilder(
@@ -339,18 +293,12 @@ class _HomePageState extends State<HomePage>
                                             final summary = summaryKey != null
                                                 ? summaryKey.tr
                                                 : 'home_card_hint'.tr;
-                                            final isCardNarrating =
-                                                _isNarrating(
-                                                    _cardNarrationId(card));
                                             return _DashboardCard(
                                               title:
                                                   card['title'].toString().tr,
                                               icon: icon,
                                               accent: accent,
                                               summary: summary,
-                                              isNarrating: isCardNarrating,
-                                              onNarrationTap: () =>
-                                                  _toggleCardNarration(card),
                                               onTap: () {
                                                 Get.toNamed(
                                                     card['route'] as String);
@@ -755,8 +703,6 @@ class _DashboardCard extends StatefulWidget {
   final Color accent;
   final VoidCallback onTap;
   final String summary;
-  final VoidCallback onNarrationTap;
-  final bool isNarrating;
 
   const _DashboardCard({
     required this.title,
@@ -764,8 +710,6 @@ class _DashboardCard extends StatefulWidget {
     required this.accent,
     required this.onTap,
     required this.summary,
-    required this.onNarrationTap,
-    required this.isNarrating,
   });
 
   @override
@@ -855,13 +799,6 @@ class _DashboardCardState extends State<_DashboardCard> {
                 fontWeight: FontWeight.w600,
                 fontSize: isCompact ? 11.0 : null,
               );
-              final narrationOffset = math.max(contentPadding - 6.0, 8.0);
-              final narrationButtonSize =
-                  isTight ? 34.0 : isCompact ? 38.0 : 44.0;
-              final narrationButtonPadding =
-                  isTight ? 6.0 : isCompact ? 7.0 : 8.0;
-              final narrationIconSize =
-                  isTight ? 18.0 : isCompact ? 20.0 : 22.0;
 
               return Stack(
                 children: [
@@ -875,22 +812,6 @@ class _DashboardCardState extends State<_DashboardCard> {
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.08),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    top: narrationOffset,
-                    right: narrationOffset,
-                    child: NarrationToggleButton(
-                      isActive: widget.isNarrating,
-                      onPressed: widget.onNarrationTap,
-                      backgroundColor:
-                          theme.colorScheme.onPrimary.withOpacity(0.16),
-                      iconColor: theme.colorScheme.onPrimary,
-                      size: narrationButtonSize,
-                      padding: EdgeInsets.all(narrationButtonPadding),
-                      iconSize: narrationIconSize,
-                      startTooltip: 'home_listen_start'.tr,
-                      stopTooltip: 'home_listen_stop'.tr,
                     ),
                   ),
                   Padding(
