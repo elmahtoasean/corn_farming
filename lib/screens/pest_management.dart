@@ -1,62 +1,73 @@
+import 'package:corn_farming/utils/detail_page.dart';
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class PestManagement extends StatefulWidget {
+class PestManagement extends StatelessWidget {
   const PestManagement({super.key});
 
   @override
-  State<PestManagement> createState() => _PestManagementState();
-}
-
-class _PestManagementState extends State<PestManagement> {
-  late YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Extract the video ID from the YouTube Shorts link
-    const videoUrl = 'https://www.youtube.com/shorts/tdwUMyJo_CQ?si=ARlUjNFB0KmwOTx9';
-    final videoId = YoutubePlayer.convertUrlToId(videoUrl);
-
-    _controller = YoutubePlayerController(
-      initialVideoId: videoId ?? '',
-      flags: const YoutubePlayerFlags(
-        autoPlay: false,
-        mute: false,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Pest Management')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: YoutubePlayer(
-              controller: _controller,
-              showVideoProgressIndicator: true,
-              progressIndicatorColor: Colors.red,
-              progressColors: const ProgressBarColors(
-                playedColor: Colors.red,
-                handleColor: Colors.redAccent,
-              ),
-            ),
-          ),
-        ),
+    final sections = [
+      CornDetailSection(
+        icon: Icons.bug_report,
+        titleKey: 'pest_scouting_title',
+        descriptionKey: 'pest_scouting_description',
+        highlightKeys: const [
+          'pest_scouting_highlight1',
+          'pest_scouting_highlight2',
+        ],
       ),
+      CornDetailSection(
+        icon: Icons.handshake,
+        titleKey: 'pest_biological_title',
+        descriptionKey: 'pest_biological_description',
+        highlightKeys: const [
+          'pest_biological_highlight1',
+          'pest_biological_highlight2',
+        ],
+      ),
+      CornDetailSection(
+        icon: Icons.security,
+        titleKey: 'pest_targeted_title',
+        descriptionKey: 'pest_targeted_description',
+        highlightKeys: const [
+          'pest_targeted_highlight1',
+          'pest_targeted_highlight2',
+        ],
+      ),
+    ];
+
+    final timeline = [
+      CornTimelineItem(
+        titleKey: 'pest_timeline_preplant_title',
+        detailKey: 'pest_timeline_preplant_detail',
+      ),
+      CornTimelineItem(
+        titleKey: 'pest_timeline_early_title',
+        detailKey: 'pest_timeline_early_detail',
+      ),
+      CornTimelineItem(
+        titleKey: 'pest_timeline_mid_title',
+        detailKey: 'pest_timeline_mid_detail',
+      ),
+    ];
+
+    return CornDetailPage(
+      titleKey: 'pest_title',
+      introKey: 'pest_intro',
+      sections: sections,
+      timeline: timeline,
+      quickTipKeys: const [
+        'pest_tip_calibrate',
+        'pest_tip_records',
+        'pest_tip_training',
+      ],
+      accentIcon: Icons.bug_report,
+      resourceKeys: const [
+        'pest_resource_scouting',
+        'pest_resource_biocontrol',
+        'pest_resource_thresholds',
+      ],
+      videoId: 'pest_video_id'.tr,
     );
   }
 }
