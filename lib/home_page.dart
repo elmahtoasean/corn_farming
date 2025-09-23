@@ -73,15 +73,12 @@ class _HomePageState extends State<HomePage>
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
-    final resolvedLanguage =
+    final languageCode =
         await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
-    final appliedLanguage = await applyTtsLanguage(
-      _tts,
-      resolvedLanguage,
-      locale: Get.locale,
-      defaultLanguage: 'en-US',
-    );
-    await configureTtsVoice(_tts, appliedLanguage, locale: Get.locale);
+    try {
+      await _tts.setLanguage(languageCode);
+    } catch (_) {}
+    await configureTtsVoice(_tts, languageCode, locale: Get.locale);
   }
 
   String _buildNarration(List<Map<String, dynamic>> cards) {
@@ -418,266 +415,162 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final modeChip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.eco_rounded,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isDarkMode ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                'home_card_hint'.tr,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onPrimary.withOpacity(0.75),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final listenButton = Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        tooltip: isNarrating ? 'home_listen_stop'.tr : 'home_listen_start'.tr,
+        onPressed: onNarrationTap,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: Icon(
+            isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
+            key: ValueKey(isNarrating),
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+      ),
+    );
+
+    final themeToggle = Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        tooltip:
+            isDarkMode ? 'switch_to_light_mode'.tr : 'switch_to_dark_mode'.tr,
+        onPressed: onThemeTap,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => RotationTransition(
+            turns: Tween(begin: 0.75, end: 1.0).animate(animation),
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: Icon(
+            isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
+            key: ValueKey(isDarkMode),
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+      ),
+    );
+
     return CornHeaderShell(
       height: preferredSize.height,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth.isFinite
-              ? constraints.maxWidth
-              : MediaQuery.of(context).size.width;
-          final isCompact = maxWidth < 560;
-          final isNarrow = maxWidth < 420;
-          final isTight = maxWidth < 360;
-
-          Widget buildModeChip() {
-            final horizontalPadding = isTight
-                ? 6.0
-                : isNarrow
-                    ? 8.0
-                    : 10.0;
-            final verticalPadding = isTight
-                ? 5.0
-                : isNarrow
-                    ? 5.5
-                    : 6.0;
-            final avatarPadding = isTight
-                ? 5.0
-                : isNarrow
-                    ? 6.0
-                    : 8.0;
-            final iconSize = isTight ? 18.0 : isNarrow ? 19.0 : 20.0;
-
-            return Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onPrimary.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(avatarPadding),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.eco_rounded,
-                      size: iconSize,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                  SizedBox(width: isTight ? 6 : 8),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isDarkMode
-                              ? 'home_mode_dark'.tr
-                              : 'home_mode_light'.tr,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: isTight ? 11 : null,
-                          ),
-                        ),
-                        Text(
-                          'home_card_hint'.tr,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimary.withOpacity(0.75),
-                            fontSize: isTight ? 10.0 : 11.0,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          Widget buildActionButton({
-            required Widget icon,
-            required VoidCallback onPressed,
-            required String tooltip,
-          }) {
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onPrimary.withOpacity(0.16),
-                borderRadius: BorderRadius.circular(isNarrow ? 14 : 16),
-              ),
-              child: IconButton(
-                tooltip: tooltip,
-                onPressed: onPressed,
-                iconSize: isTight ? 22 : isNarrow ? 23 : 24,
-                padding: EdgeInsets.all(isTight ? 6 : 8),
-                constraints: const BoxConstraints(minHeight: 0, minWidth: 0),
-                splashRadius: isTight ? 20 : null,
-                icon: icon,
-              ),
-            );
-          }
-
-          final listenButton = buildActionButton(
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => ScaleTransition(
-                scale: animation,
-                child: child,
-              ),
-              child: Icon(
-                isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
-                key: ValueKey(isNarrating),
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-            onPressed: onNarrationTap,
-            tooltip:
-                isNarrating ? 'home_listen_stop'.tr : 'home_listen_start'.tr,
-          );
-
-          final themeToggle = buildActionButton(
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => RotationTransition(
-                turns: Tween(begin: 0.75, end: 1.0).animate(animation),
-                child: FadeTransition(opacity: animation, child: child),
-              ),
-              child: Icon(
-                isDarkMode
-                    ? Icons.light_mode_rounded
-                    : Icons.nights_stay_rounded,
-                key: ValueKey(isDarkMode),
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-            onPressed: onThemeTap,
-            tooltip:
-                isDarkMode ? 'switch_to_light_mode'.tr : 'switch_to_dark_mode'.tr,
-          );
-
-          final menuButton = Container(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.onPrimary.withOpacity(0.16),
-              borderRadius: BorderRadius.circular(isNarrow ? 14 : 16),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: IconButton(
               onPressed: onMenuTap,
               icon: const Icon(Icons.menu_rounded),
               color: theme.colorScheme.onPrimary,
-              iconSize: isTight ? 22 : 24,
-              padding: EdgeInsets.all(isTight ? 6 : 8),
-              constraints: const BoxConstraints(minHeight: 0, minWidth: 0),
-              splashRadius: isTight ? 20 : null,
             ),
-          );
-
-          final titleBlock = Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                maxLines: isCompact ? 2 : 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: isTight ? 20 : null,
-                  height: 1.15,
-                ),
-              ),
-              SizedBox(height: isCompact ? 4 : 6),
-              Text(
-                'home_appbar_subtitle'.tr,
-                maxLines: isCompact ? 2 : 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.85),
-                  fontSize: isTight ? 11.5 : null,
-                  height: 1.25,
-                ),
-              ),
-              SizedBox(height: isCompact ? 4 : 6),
-              Text(
-                'home_listen_hint'.tr,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.7),
-                  fontSize: isTight ? 10.0 : 11.0,
-                  height: 1.25,
-                ),
-              ),
-            ],
-          );
-
-          final actionBar = Wrap(
-            spacing: isCompact ? 10 : 12,
-            runSpacing: 8,
-            alignment:
-                isCompact ? WrapAlignment.start : WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              buildModeChip(),
-              listenButton,
-              themeToggle,
-            ],
-          );
-
-          if (isCompact) {
-            return Column(
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    menuButton,
-                    const SizedBox(width: 12),
-                    Expanded(child: titleBlock),
-                  ],
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment:
-                      isNarrow ? Alignment.centerLeft : Alignment.centerRight,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: double.infinity),
-                    child: actionBar,
+                const SizedBox(height: 4),
+                Text(
+                  'home_appbar_subtitle'.tr,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'home_listen_hint'.tr,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                    fontSize: 11,
                   ),
                 ),
               ],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              menuButton,
-              const SizedBox(width: 16),
-              Expanded(child: titleBlock),
-              const SizedBox(width: 12),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth * 0.45),
-                child: actionBar,
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                modeChip,
+                listenButton,
+                themeToggle,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

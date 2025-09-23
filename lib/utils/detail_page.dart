@@ -132,15 +132,12 @@ class _CornDetailPageState extends State<CornDetailPage> {
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
-    final resolvedLanguage =
+    final languageCode =
         await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
-    final appliedLanguage = await applyTtsLanguage(
-      _tts,
-      resolvedLanguage,
-      locale: Get.locale,
-      defaultLanguage: 'en-US',
-    );
-    await configureTtsVoice(_tts, appliedLanguage, locale: Get.locale);
+    try {
+      await _tts.setLanguage(languageCode);
+    } catch (_) {}
+    await configureTtsVoice(_tts, languageCode, locale: Get.locale);
   }
 
   String _buildNarration() {
@@ -409,187 +406,120 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     final statusText =
         isNarrating ? 'detail_listening'.tr : 'detail_listen'.tr;
 
+    final accentBadge = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(accentIcon, color: Colors.white, size: 26),
+    );
+
+    final listenButton = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        onPressed: onNarrationTap,
+        tooltip:
+            isNarrating ? 'detail_stop_listening'.tr : 'detail_listen'.tr,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: Icon(
+            isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
+            key: ValueKey(isNarrating),
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+
+    final themeToggle = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        tooltip:
+            isDarkMode ? 'switch_to_light_mode'.tr : 'switch_to_dark_mode'.tr,
+        onPressed: onThemeTap,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => RotationTransition(
+            turns: Tween(begin: 0.75, end: 1.0).animate(animation),
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: Icon(
+            isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
+            key: ValueKey(isDarkMode),
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+
     return CornHeaderShell(
       height: preferredSize.height,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth.isFinite
-              ? constraints.maxWidth
-              : MediaQuery.of(context).size.width;
-          final isCompact = maxWidth < 540;
-          final isNarrow = maxWidth < 400;
-
-          Widget buildActionButton({
-            required Widget icon,
-            required VoidCallback onPressed,
-            required String tooltip,
-          }) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.16),
-                borderRadius: BorderRadius.circular(isNarrow ? 14 : 16),
-              ),
-              child: IconButton(
-                tooltip: tooltip,
-                onPressed: onPressed,
-                iconSize: isNarrow ? 22 : 24,
-                padding: EdgeInsets.all(isNarrow ? 6 : 8),
-                constraints: const BoxConstraints(minHeight: 0, minWidth: 0),
-                splashRadius: isNarrow ? 20 : null,
-                icon: icon,
-              ),
-            );
-          }
-
-          final accentBadge = Container(
-            padding: EdgeInsets.all(isNarrow ? 10 : 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              accentIcon,
-              color: Colors.white,
-              size: isNarrow ? 24 : 26,
-            ),
-          );
-
-          final listenButton = buildActionButton(
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => ScaleTransition(
-                scale: animation,
-                child: child,
-              ),
-              child: Icon(
-                isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
-                key: ValueKey(isNarrating),
-                color: Colors.white,
-              ),
-            ),
-            onPressed: onNarrationTap,
-            tooltip:
-                isNarrating ? 'detail_stop_listening'.tr : 'detail_listen'.tr,
-          );
-
-          final themeToggle = buildActionButton(
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => RotationTransition(
-                turns: Tween(begin: 0.75, end: 1.0).animate(animation),
-                child: FadeTransition(opacity: animation, child: child),
-              ),
-              child: Icon(
-                isDarkMode
-                    ? Icons.light_mode_rounded
-                    : Icons.nights_stay_rounded,
-                key: ValueKey(isDarkMode),
-                color: Colors.white,
-              ),
-            ),
-            onPressed: onThemeTap,
-            tooltip:
-                isDarkMode ? 'switch_to_light_mode'.tr : 'switch_to_dark_mode'.tr,
-          );
-
-          final backButton = Container(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(isNarrow ? 14 : 16),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: IconButton(
               onPressed: onBack,
               icon: const Icon(Icons.arrow_back_rounded),
               color: Colors.white,
-              iconSize: isNarrow ? 22 : 24,
-              padding: EdgeInsets.all(isNarrow ? 6 : 8),
-              constraints: const BoxConstraints(minHeight: 0, minWidth: 0),
-              splashRadius: isNarrow ? 20 : null,
             ),
-          );
-
-          final titleBlock = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                maxLines: isCompact ? 2 : 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  height: 1.15,
-                ),
-              ),
-              SizedBox(height: isCompact ? 4 : 6),
-              Text(
-                statusText,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withOpacity(0.85),
-                  height: 1.2,
-                ),
-              ),
-            ],
-          );
-
-          final actionBar = Wrap(
-            spacing: isCompact ? 10 : 12,
-            runSpacing: 8,
-            alignment:
-                isCompact ? WrapAlignment.start : WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              accentBadge,
-              listenButton,
-              themeToggle,
-            ],
-          );
-
-          if (isCompact) {
-            return Column(
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    backButton,
-                    const SizedBox(width: 12),
-                    Expanded(child: titleBlock),
-                  ],
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment:
-                      isNarrow ? Alignment.centerLeft : Alignment.centerRight,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: double.infinity),
-                    child: actionBar,
+                const SizedBox(height: 6),
+                Text(
+                  statusText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.85),
                   ),
                 ),
               ],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              backButton,
-              const SizedBox(width: 14),
-              Expanded(child: titleBlock),
-              const SizedBox(width: 12),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth * 0.45),
-                child: actionBar,
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                accentBadge,
+                listenButton,
+                themeToggle,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -692,113 +622,71 @@ class _DetailSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width;
-        final isCompact = maxWidth < 320;
-        final isTight = maxWidth < 260;
-
-        final horizontalPadding = isTight
-            ? 14.0
-            : isCompact
-                ? 16.0
-                : 20.0;
-        final verticalPadding = isTight
-            ? 16.0
-            : isCompact
-                ? 18.0
-                : 20.0;
-        final iconPadding = isTight
-            ? 10.0
-            : isCompact
-                ? 11.0
-                : 12.0;
-        final gap = isTight ? 10.0 : 12.0;
-        final bodySpacing = isTight ? 10.0 : 12.0;
-
-        final titleStyle = theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: theme.colorScheme.primary,
-          fontSize: isTight ? 16 : isCompact ? 17 : null,
-        );
-
-        final bodyStyle = theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.85),
-          height: 1.5,
-          fontSize: isTight ? 13.0 : isCompact ? 13.5 : null,
-        );
-
-        final chipSpacing = isCompact ? 8.0 : 10.0;
-
-        return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: verticalPadding,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.15),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.15),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.08),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(iconPadding),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child:
-                        Icon(section.icon, color: theme.colorScheme.primary),
-                  ),
-                  SizedBox(width: gap),
-                  Expanded(
-                    child: Text(
-                      section.titleKey.tr,
-                      style: titleStyle,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: bodySpacing),
-              Text(
-                section.descriptionKey.tr,
-                style: bodyStyle,
-                textAlign: TextAlign.start,
-              ),
-              if (section.highlightKeys.isNotEmpty) ...[
-                SizedBox(height: bodySpacing + 2),
-                Wrap(
-                  spacing: chipSpacing,
-                  runSpacing: chipSpacing,
-                  children: section.highlightKeys
-                      .map((item) => _TipChip(
-                            label: item.tr,
-                            color: theme.colorScheme.primary.withOpacity(0.12),
-                            textColor: theme.colorScheme.primary,
-                          ))
-                      .toList(),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  shape: BoxShape.circle,
                 ),
-              ],
+                child: Icon(section.icon, color: theme.colorScheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  section.titleKey.tr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          Text(
+            section.descriptionKey.tr,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.85),
+              height: 1.55,
+            ),
+          ),
+          if (section.highlightKeys.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: section.highlightKeys
+                  .map((item) => _TipChip(
+                        label: item.tr,
+                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        textColor: theme.colorScheme.primary,
+                      ))
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -811,77 +699,43 @@ class _TimelineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width;
-        final isCompact = maxWidth < 320;
-
-        final backgroundColor = isDark
-            ? theme.colorScheme.primaryContainer.withOpacity(0.45)
-            : theme.colorScheme.secondaryContainer.withOpacity(0.88);
-        final borderColor = isDark
-            ? theme.colorScheme.primary.withOpacity(0.3)
-            : theme.colorScheme.secondary.withOpacity(0.35);
-        final iconColor = isDark
-            ? Colors.white
-            : theme.colorScheme.primary;
-        final titleColor = isDark
-            ? Colors.white
-            : theme.colorScheme.onSecondaryContainer;
-        final detailColor = isDark
-            ? Colors.white.withOpacity(0.92)
-            : theme.colorScheme.onSecondaryContainer.withOpacity(0.95);
-
-        return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? 16 : 18,
-            vertical: isCompact ? 16 : 18,
-          ),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: borderColor),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.timeline_rounded,
-                    color: iconColor,
-                    size: isCompact ? 20 : 22,
+              const Icon(Icons.timeline_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  item.titleKey.tr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
-                  SizedBox(width: isCompact ? 8 : 10),
-                  Expanded(
-                    child: Text(
-                      item.titleKey.tr,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: titleColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: isCompact ? 16 : null,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: isCompact ? 8 : 10),
-              Text(
-                item.detailKey.tr,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: detailColor,
-                  height: 1.45,
-                  fontSize: isCompact ? 13.5 : null,
                 ),
               ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 10),
+          Text(
+            item.detailKey.tr,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withOpacity(0.9),
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
