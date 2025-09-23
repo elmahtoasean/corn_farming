@@ -404,7 +404,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                isDark ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
+                isDarkMode ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onPrimary,
                   fontWeight: FontWeight.w700,
