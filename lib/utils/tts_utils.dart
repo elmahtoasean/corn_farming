@@ -193,9 +193,9 @@ Future<String> configureTtsLanguage(
       final upper = countryCode.toUpperCase();
       final lower = countryCode.toLowerCase();
       addAttempt('$languageCode-$upper');
-      addAttempt('$languageCode_$upper');
+      addAttempt('${languageCode}_$upper');
       addAttempt('$languageCode-$lower');
-      addAttempt('$languageCode_$lower');
+      addAttempt('${languageCode}_$lower');
     }
     addAttempt(languageCode);
 

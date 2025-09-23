@@ -1,7 +1,5 @@
 import 'package:corn_farming/utils/detail_page.dart';
 import 'package:flutter/material.dart';
-import 'package:corn_farming/controller/localization_controller.dart';
-import 'package:corn_farming/models/language_model.dart';
 import 'package:get/get.dart'; 
 
 class Help extends StatelessWidget {
