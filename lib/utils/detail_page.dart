@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:corn_farming/utils/corn_header.dart';
 import 'package:corn_farming/utils/tts_utils.dart';
@@ -29,6 +31,26 @@ class CornTimelineItem {
 
 typedef CornSupplementBuilder = Widget Function(
     BuildContext context, double maxWidth);
+
+double _clampDimension(double value, double lower, double upper) {
+  if (value.isNaN || value.isInfinite) {
+    return upper;
+  }
+  var minValue = lower;
+  var maxValue = upper;
+  if (minValue > maxValue) {
+    final swap = minValue;
+    minValue = maxValue;
+    maxValue = swap;
+  }
+  if (value < minValue) {
+    return minValue;
+  }
+  if (value > maxValue) {
+    return maxValue;
+  }
+  return value;
+}
 
 class CornDetailPage extends StatefulWidget {
   final String titleKey;
@@ -112,7 +134,10 @@ class _CornDetailPageState extends State<CornDetailPage> {
     await _tts.awaitSpeakCompletion(true);
     final languageCode =
         await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
-    await _tts.setLanguage(languageCode);
+    try {
+      await _tts.setLanguage(languageCode);
+    } catch (_) {}
+    await configureTtsVoice(_tts, languageCode, locale: Get.locale);
   }
 
   String _buildNarration() {
@@ -199,93 +224,148 @@ class _CornDetailPageState extends State<CornDetailPage> {
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  final columnCount = width > 1100
+                  final availableWidth = constraints.maxWidth;
+                  final targetWidth =
+                      availableWidth > 1180 ? 1180.0 : availableWidth;
+                  final horizontalPadding = targetWidth < 420
+                      ? 16.0
+                      : targetWidth < 720
+                          ? 20.0
+                          : 28.0;
+                  final verticalPadding = targetWidth < 520 ? 20.0 : 24.0;
+                  final spacing = targetWidth < 600 ? 16.0 : 20.0;
+                  final safeWidth =
+                      math.max(targetWidth - (horizontalPadding * 2), 0.0);
+                  final sectionColumns = targetWidth >= 1180
                       ? 3
-                      : width > 720
+                      : targetWidth >= 820
                           ? 2
                           : 1;
-                  final itemWidth = columnCount == 1
-                      ? width
-                      : (width - (columnCount - 1) * 20) / columnCount;
+                  final baseSectionWidth = sectionColumns == 1 || safeWidth == 0
+                      ? safeWidth
+                      : (safeWidth - (sectionColumns - 1) * spacing) /
+                          sectionColumns;
+                  final minSectionWidth =
+                      safeWidth <= 320 ? safeWidth : 260.0;
+                  final maxSectionWidth = sectionColumns == 1 || safeWidth == 0
+                      ? safeWidth
+                      : safeWidth / sectionColumns;
+                  final sectionWidth = _clampDimension(
+                    baseSectionWidth,
+                    minSectionWidth,
+                    maxSectionWidth,
+                  );
 
-                  return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: width < 420 ? 16 : 24,
-                      vertical: 24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _IntroCard(
-                          intro: widget.introKey.tr,
-                          quickTips: widget.quickTipKeys
-                              .map((tip) => tip.tr)
-                              .toList(),
-                          accentIcon: widget.accentIcon,
+                  final timelineTwoColumn = safeWidth >= 760;
+                  final baseTimelineWidth =
+                      timelineTwoColumn && safeWidth > 0
+                          ? (safeWidth - spacing) / 2
+                          : safeWidth;
+                  final timelineMinWidth =
+                      safeWidth <= 360 ? safeWidth : 300.0;
+                  final timelineMaxWidth = timelineTwoColumn && safeWidth > 0
+                      ? safeWidth / 2
+                      : safeWidth;
+                  final timelineWidth = _clampDimension(
+                    baseTimelineWidth,
+                    timelineMinWidth,
+                    timelineMaxWidth,
+                  );
+
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: targetWidth),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                          vertical: verticalPadding,
                         ),
-                        if (_youtubeController != null) ...[
-                          const SizedBox(height: 24),
-                          _VideoCard(
-                            controller: _youtubeController!,
-                            title: 'detail_video_title'.tr,
-                            caption: 'detail_video_hint'.tr,
+                        child: SizedBox(
+                          width: targetWidth,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _IntroCard(
+                                intro: widget.introKey.tr,
+                                quickTips: widget.quickTipKeys
+                                    .map((tip) => tip.tr)
+                                    .toList(),
+                                accentIcon: widget.accentIcon,
+                              ),
+                              if (_youtubeController != null) ...[
+                                SizedBox(height: spacing + 8),
+                                _VideoCard(
+                                  controller: _youtubeController!,
+                                  title: 'detail_video_title'.tr,
+                                  caption: 'detail_video_hint'.tr,
+                                ),
+                              ],
+                              SizedBox(height: spacing + 4),
+                              Wrap(
+                                spacing: spacing,
+                                runSpacing: spacing,
+                                children: widget.sections
+                                    .map(
+                                      (section) => SizedBox(
+                                        width: sectionColumns == 1
+                                            ? safeWidth
+                                            : sectionWidth,
+                                        child: _DetailSectionCard(
+                                          section: section,
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                              if (widget.supplementalBuilders.isNotEmpty) ...[
+                                SizedBox(height: spacing + 4),
+                                ...widget.supplementalBuilders.map(
+                                  (builder) => Padding(
+                                    padding: EdgeInsets.only(bottom: spacing),
+                                    child: builder(context, targetWidth),
+                                  ),
+                                ),
+                              ],
+                              if (widget.timeline.isNotEmpty) ...[
+                                SizedBox(height: spacing + 12),
+                                Text(
+                                  'seasonal_timeline'.tr,
+                                  style:
+                                      theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: spacing,
+                                  runSpacing: spacing,
+                                  children: widget.timeline
+                                      .map(
+                                        (entry) => SizedBox(
+                                          width: timelineTwoColumn
+                                              ? timelineWidth
+                                              : safeWidth,
+                                          child: _TimelineCard(item: entry),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                              if (widget.resourceKeys.isNotEmpty) ...[
+                                SizedBox(height: spacing + 12),
+                                _ResourceList(
+                                  resources: widget.resourceKeys
+                                      .map((key) => key.tr)
+                                      .toList(),
+                                ),
+                              ],
+                              SizedBox(height: spacing * 2.4),
+                            ],
                           ),
-                        ],
-                        const SizedBox(height: 24),
-                        Wrap(
-                          spacing: 20,
-                          runSpacing: 20,
-                          children: widget.sections
-                              .map((section) => SizedBox(
-                                    width: itemWidth.clamp(260, width),
-                                    child: _DetailSectionCard(section: section),
-                                  ))
-                              .toList(),
                         ),
-                        if (widget.supplementalBuilders.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          ...widget.supplementalBuilders.map(
-                            (builder) => Padding(
-                              padding: const EdgeInsets.only(bottom: 24),
-                              child: builder(context, width),
-                            ),
-                          ),
-                        ],
-                        if (widget.timeline.isNotEmpty) ...[
-                          const SizedBox(height: 32),
-                          Text(
-                            'seasonal_timeline'.tr,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 20,
-                            runSpacing: 20,
-                            children: widget.timeline
-                                .map((entry) => SizedBox(
-                                      width: width > 840
-                                          ? (width / 2) - 32
-                                          : double.infinity,
-                                      child: _TimelineCard(item: entry),
-                                    ))
-                                .toList(),
-                          ),
-                        ],
-                        if (widget.resourceKeys.isNotEmpty) ...[
-                          const SizedBox(height: 32),
-                          _ResourceList(
-                            resources: widget.resourceKeys
-                                .map((key) => key.tr)
-                                .toList(),
-                          ),
-                        ],
-                        const SizedBox(height: 48),
-                      ],
+                      ),
                     ),
                   );
                 },
