@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 Map<int, Color> _colorSwatch = {
-  50: Color.fromRGBO(255, 211, 158, .1),
-  100: Color.fromRGBO(255, 211, 158, .2),
-  200: Color.fromRGBO(255, 211, 158, .3),
-  300: Color.fromRGBO(255, 211, 158, .4),
-  400: Color.fromRGBO(255, 211, 158, .5),
-  500: Color.fromRGBO(255, 211, 158, .6),
-  600: Color.fromRGBO(255, 211, 158, .7),
-  700: Color.fromRGBO(255, 211, 158, .8),
-  800: Color.fromRGBO(255, 211, 158, .9),
-  900: Color.fromRGBO(255, 211, 158, 1),
+  50: const Color(0xFFEAF6DF),
+  100: const Color(0xFFD6EDBF),
+  200: const Color(0xFFBDE390),
+  300: const Color(0xFFA3D561),
+  400: const Color(0xFF8EC943),
+  500: const Color(0xFF7CB342),
+  600: const Color(0xFF6E9F3A),
+  700: const Color(0xFF5F8A32),
+  800: const Color(0xFF4D6D27),
+  900: const Color(0xFF36491C),
 };
 
-MaterialColor customSwatch = MaterialColor(0xFFFFD39E, _colorSwatch);
+MaterialColor customSwatch = MaterialColor(0xFF7CB342, _colorSwatch);

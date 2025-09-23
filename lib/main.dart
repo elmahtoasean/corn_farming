@@ -23,11 +23,86 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<LocalizationController>(
       builder: (localizationController) {
+        final ColorScheme lightScheme = ColorScheme.fromSeed(
+          seedColor: customSwatch,
+          primary: customSwatch[600]!,
+          secondary: const Color(0xFFFFC84B),
+          background: const Color(0xFFF6F4EB),
+        );
+        final ColorScheme darkScheme = ColorScheme.fromSeed(
+          seedColor: customSwatch,
+          primary: customSwatch[300]!,
+          secondary: const Color(0xFFF0B429),
+          background: const Color(0xFF12140F),
+          brightness: Brightness.dark,
+        );
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.system,
           theme: ThemeData(
-            primarySwatch: customSwatch,
-            cardColor: customSwatch[500],
+            useMaterial3: true,
+            colorScheme: lightScheme,
+            scaffoldBackgroundColor: lightScheme.background,
+            cardColor: Colors.white,
+            textTheme: Theme.of(context).textTheme.apply(
+                  bodyColor: lightScheme.onBackground,
+                  displayColor: lightScheme.onBackground,
+                ),
+            appBarTheme: AppBarTheme(
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              foregroundColor: lightScheme.onSurface,
+              titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: lightScheme.onSurface,
+                  ),
+            ),
+            cardTheme: CardTheme(
+              margin: const EdgeInsets.all(0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 8,
+              surfaceTintColor: Colors.transparent,
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: lightScheme.primary.withOpacity(0.3)),
+              ),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: darkScheme,
+            scaffoldBackgroundColor: darkScheme.background,
+            cardColor: darkScheme.surface,
+            textTheme: Theme.of(context).textTheme.apply(
+                  bodyColor: darkScheme.onBackground,
+                  displayColor: darkScheme.onBackground,
+                ),
+            appBarTheme: AppBarTheme(
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              foregroundColor: darkScheme.onSurface,
+              titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: darkScheme.onSurface,
+                  ),
+            ),
+            cardTheme: CardTheme(
+              margin: const EdgeInsets.all(0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 10,
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: darkScheme.primary.withOpacity(0.4)),
+              ),
+            ),
           ),
           translations: Messages(languages: languages),
           locale: localizationController.locale,
