@@ -1,4 +1,5 @@
 import 'package:corn_farming/utils/detail_page.dart';
+import 'package:corn_farming/widgets/seed_calculator_card.dart';
 import 'package:flutter/material.dart';
 
 class SeedType extends StatelessWidget {
@@ -32,6 +33,16 @@ class SeedType extends StatelessWidget {
         highlightKeys: const [
           'seed_storage_highlight1',
           'seed_storage_highlight2',
+        ],
+      ),
+      CornDetailSection(
+        icon: Icons.category_rounded,
+        titleKey: 'seed_classification_title',
+        descriptionKey: 'seed_classification_description',
+        highlightKeys: const [
+          'seed_classification_hybrid',
+          'seed_classification_composite',
+          'seed_classification_specialty',
         ],
       ),
     ];
@@ -68,6 +79,20 @@ class SeedType extends StatelessWidget {
         'seed_resource_emergence',
       ],
       videoId: 'seed_video_id'.tr,
+      supplementalBuilders: [
+        (context, width) => Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: width > 840 ? 720 : width,
+                ),
+                child: const SeedCalculatorCard(),
+              ),
+            ),
+      ],
+      additionalNarrationKeys: const [
+        'seed_calc_narration',
+        'seed_classification_narration',
+      ],
     );
   }
 }

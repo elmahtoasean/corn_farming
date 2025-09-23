@@ -1,4 +1,5 @@
 import 'package:corn_farming/utils/detail_page.dart';
+import 'package:corn_farming/widgets/pest_disease_advisor_card.dart';
 import 'package:flutter/material.dart';
 
 class PestManagement extends StatelessWidget {
@@ -68,6 +69,20 @@ class PestManagement extends StatelessWidget {
         'pest_resource_thresholds',
       ],
       videoId: 'pest_video_id'.tr,
+      supplementalBuilders: [
+        (context, width) => Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: width > 900 ? 820 : width,
+                ),
+                child: const PestDiseaseAdvisorCard(),
+              ),
+            ),
+      ],
+      additionalNarrationKeys: const [
+        'pest_advisor_narration',
+        'disease_advisor_narration',
+      ],
     );
   }
 }

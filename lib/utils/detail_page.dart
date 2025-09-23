@@ -1,3 +1,5 @@
+import 'package:corn_farming/controller/theme_controller.dart';
+import 'package:corn_farming/utils/corn_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
@@ -24,6 +26,9 @@ class CornTimelineItem {
   const CornTimelineItem({required this.titleKey, required this.detailKey});
 }
 
+typedef CornSupplementBuilder = Widget Function(
+    BuildContext context, double maxWidth);
+
 class CornDetailPage extends StatefulWidget {
   final String titleKey;
   final String introKey;
@@ -33,6 +38,8 @@ class CornDetailPage extends StatefulWidget {
   final IconData accentIcon;
   final List<String> resourceKeys;
   final String? videoId;
+  final List<CornSupplementBuilder> supplementalBuilders;
+  final List<String> additionalNarrationKeys;
 
   const CornDetailPage({
     super.key,
@@ -44,6 +51,8 @@ class CornDetailPage extends StatefulWidget {
     required this.accentIcon,
     this.resourceKeys = const [],
     this.videoId,
+    this.supplementalBuilders = const [],
+    this.additionalNarrationKeys = const [],
   });
 
   @override
@@ -134,6 +143,9 @@ class _CornDetailPageState extends State<CornDetailPage> {
     for (final resource in widget.resourceKeys) {
       buffer.writeln(resource.tr);
     }
+    for (final extra in widget.additionalNarrationKeys) {
+      buffer.writeln(extra.tr);
+    }
     return buffer.toString();
   }
 
@@ -162,30 +174,33 @@ class _CornDetailPageState extends State<CornDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: _CornDetailAppBar(
-        title: widget.titleKey.tr,
-        accentIcon: widget.accentIcon,
-        isNarrating: _isSpeaking,
-        onBack: () => Navigator.of(context).maybePop(),
-        onNarrationTap: _toggleNarration,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.1),
-              theme.colorScheme.surface,
-            ],
+    return GetBuilder<ThemeController>(
+      builder: (themeController) {
+        final theme = Theme.of(context);
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          appBar: _CornDetailAppBar(
+            title: widget.titleKey.tr,
+            accentIcon: widget.accentIcon,
+            isNarrating: _isSpeaking,
+            onBack: () => Navigator.of(context).maybePop(),
+            onNarrationTap: _toggleNarration,
+            onThemeTap: themeController.toggleThemeMode,
+            isDarkMode: themeController.isDarkMode,
           ),
-        ),
-        child: SafeArea(
-          child: LayoutBuilder(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.1),
+                  theme.colorScheme.surface,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
               final columnCount = width > 1100
@@ -230,6 +245,15 @@ class _CornDetailPageState extends State<CornDetailPage> {
                               ))
                           .toList(),
                     ),
+                    if (widget.supplementalBuilders.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      ...widget.supplementalBuilders.map(
+                        (builder) => Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: builder(context, width),
+                        ),
+                      ),
+                    ],
                     if (widget.timeline.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       Text(
@@ -275,6 +299,8 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isNarrating;
   final VoidCallback onBack;
   final VoidCallback onNarrationTap;
+  final VoidCallback onThemeTap;
+  final bool isDarkMode;
 
   const _CornDetailAppBar({
     required this.title,
@@ -282,143 +308,133 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.isNarrating,
     required this.onBack,
     required this.onNarrationTap,
+    required this.onThemeTap,
+    required this.isDarkMode,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(110);
+  Size get preferredSize => const Size.fromHeight(120);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final statusText =
+        isNarrating ? 'detail_listening'.tr : 'detail_listen'.tr;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: SizedBox(
-        height: preferredSize.height,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.primary.withOpacity(isDark ? 0.6 : 0.45),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.25),
-                        blurRadius: 22,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
+    final accentBadge = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(accentIcon, color: Colors.white, size: 26),
+    );
+
+    final listenButton = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        onPressed: onNarrationTap,
+        tooltip:
+            isNarrating ? 'detail_stop_listening'.tr : 'detail_listen'.tr,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: Icon(
+            isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
+            key: ValueKey(isNarrating),
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+
+    final themeToggle = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        tooltip:
+            isDarkMode ? 'switch_to_light_mode'.tr : 'switch_to_dark_mode'.tr,
+        onPressed: onThemeTap,
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => RotationTransition(
+            turns: Tween(begin: 0.75, end: 1.0).animate(animation),
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: Icon(
+            isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
+            key: ValueKey(isDarkMode),
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+
+    return CornHeaderShell(
+      height: preferredSize.height,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              right: -30,
-              top: -20,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
+                const SizedBox(height: 6),
+                Text(
+                  statusText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.85),
+                  ),
                 ),
-              ),
+              ],
             ),
-            Positioned(
-              left: -26,
-              bottom: -30,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
-                ),
-              ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                accentBadge,
+                listenButton,
+                themeToggle,
+              ],
             ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: onBack,
-                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            isNarrating ? 'detail_listening'.tr : 'detail_listen'.tr,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withOpacity(0.85),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(accentIcon, color: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: IconButton(
-                        onPressed: onNarrationTap,
-                        tooltip: isNarrating
-                            ? 'detail_stop_listening'.tr
-                            : 'detail_listen'.tr,
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) => ScaleTransition(
-                            scale: animation,
-                            child: child,
-                          ),
-                          child: Icon(
-                            isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
-                            key: ValueKey(isNarrating),
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
