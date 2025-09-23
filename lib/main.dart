@@ -1,4 +1,5 @@
 import 'package:corn_farming/controller/localization_controller.dart';
+import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:corn_farming/utils/app_constants.dart';
 import 'package:corn_farming/utils/app_route.dart';
 import 'package:corn_farming/utils/messages.dart';
@@ -21,28 +22,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<LocalizationController>(
-      builder: (localizationController) {
-        final ColorScheme lightScheme = ColorScheme.fromSeed(
-          seedColor: customSwatch,
-          primary: customSwatch[600]!,
-          secondary: const Color(0xFFFFC84B),
-          background: const Color(0xFFF6F4EB),
-        );
-        final ColorScheme darkScheme = ColorScheme.fromSeed(
-          seedColor: customSwatch,
-          primary: customSwatch[300]!,
-          secondary: const Color(0xFFF0B429),
-          background: const Color(0xFF12140F),
-          brightness: Brightness.dark,
-        );
-        return GetMaterialApp(
+    return GetBuilder<ThemeController>(
+      builder: (themeController) {
+        return GetBuilder<LocalizationController>(
+          builder: (localizationController) {
+            final ColorScheme lightScheme = ColorScheme.fromSeed(
+              seedColor: customSwatch,
+              primary: customSwatch.shade600,
+              secondary: const Color(0xFFF6B042),
+              surface: const Color(0xFFFDF3D9),
+              background: const Color(0xFFF9F3E5),
+            );
+            final ColorScheme darkScheme = ColorScheme.fromSeed(
+              seedColor: customSwatch,
+              primary: customSwatch.shade300,
+              secondary: const Color(0xFFFFD37A),
+              surface: const Color(0xFF1F2A17),
+              background: const Color(0xFF141C10),
+              brightness: Brightness.dark,
+            );
+            return GetMaterialApp(
           debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.system,
+          themeMode: themeController.themeMode,
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
-            scaffoldBackgroundColor: lightScheme.background,
+            scaffoldBackgroundColor: lightScheme.surface,
+            canvasColor: lightScheme.surface,
             cardColor: Colors.white,
             textTheme: Theme.of(context).textTheme.apply(
                   bodyColor: lightScheme.onBackground,
@@ -71,11 +77,16 @@ class MyApp extends StatelessWidget {
                 borderSide: BorderSide(color: lightScheme.primary.withOpacity(0.3)),
               ),
             ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              backgroundColor: lightScheme.primary,
+              foregroundColor: lightScheme.onPrimary,
+            ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkScheme,
-            scaffoldBackgroundColor: darkScheme.background,
+            scaffoldBackgroundColor: darkScheme.surface,
+            canvasColor: darkScheme.surface,
             cardColor: darkScheme.surface,
             textTheme: Theme.of(context).textTheme.apply(
                   bodyColor: darkScheme.onBackground,
@@ -103,6 +114,10 @@ class MyApp extends StatelessWidget {
                 borderSide: BorderSide(color: darkScheme.primary.withOpacity(0.4)),
               ),
             ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              backgroundColor: darkScheme.primary,
+              foregroundColor: darkScheme.onPrimary,
+            ),
           ),
           translations: Messages(languages: languages),
           locale: localizationController.locale,
@@ -112,6 +127,8 @@ class MyApp extends StatelessWidget {
           ),
           initialRoute: RouteHelper.getInitialRoute(),
           getPages: RouteHelper.routes,
+        );
+          },
         );
       },
     );

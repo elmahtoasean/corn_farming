@@ -62,6 +62,12 @@ class FloweringPlants extends StatelessWidget {
         'flower_tip_refuges',
       ],
       accentIcon: Icons.filter_vintage,
+      resourceKeys: const [
+        'flower_resource_pollination',
+        'flower_resource_fungal',
+        'flower_resource_monitor',
+      ],
+      videoId: 'flower_video_id'.tr,
     );
   }
 }

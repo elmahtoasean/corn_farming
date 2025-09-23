@@ -62,6 +62,12 @@ class GrowthConditions extends StatelessWidget {
         'growth_tip_windbreak',
       ],
       accentIcon: Icons.sunny,
+      resourceKeys: const [
+        'growth_resource_light',
+        'growth_resource_heat',
+        'growth_resource_monitoring',
+      ],
+      videoId: 'growth_video_id'.tr,
     );
   }
 }

@@ -62,6 +62,12 @@ class SoilType extends StatelessWidget {
         'soil_tip_mulch',
       ],
       accentIcon: Icons.grass,
+      resourceKeys: const [
+        'soil_resource_testing',
+        'soil_resource_cover',
+        'soil_resource_records',
+      ],
+      videoId: 'soil_video_id'.tr,
     );
   }
 }

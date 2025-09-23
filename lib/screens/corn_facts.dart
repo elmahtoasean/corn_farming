@@ -62,6 +62,12 @@ class CornFacts extends StatelessWidget {
         'facts_tip_support',
       ],
       accentIcon: Icons.history,
+      resourceKeys: const [
+        'facts_resource_nutrition',
+        'facts_resource_history',
+        'facts_resource_use',
+      ],
+      videoId: 'facts_video_id'.tr,
     );
   }
 }

@@ -62,6 +62,12 @@ class RipeCorns extends StatelessWidget {
         'ripe_tip_logs',
       ],
       accentIcon: Icons.task_alt,
+      resourceKeys: const [
+        'ripe_resource_maturity',
+        'ripe_resource_moisture',
+        'ripe_resource_storage',
+      ],
+      videoId: 'ripe_video_id'.tr,
     );
   }
 }

@@ -62,6 +62,12 @@ class NursingPlants extends StatelessWidget {
         'nursing_tip_predators',
       ],
       accentIcon: Icons.volunteer_activism,
+      resourceKeys: const [
+        'nursing_resource_pruning',
+        'nursing_resource_mulch',
+        'nursing_resource_support',
+      ],
+      videoId: 'nursing_video_id'.tr,
     );
   }
 }

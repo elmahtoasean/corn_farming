@@ -62,6 +62,12 @@ class ToolGuide extends StatelessWidget {
         'tool_tip_training',
       ],
       accentIcon: Icons.handyman,
+      resourceKeys: const [
+        'tools_resource_maintenance',
+        'tools_resource_calibration',
+        'tools_resource_safety',
+      ],
+      videoId: 'tools_video_id'.tr,
     );
   }
 }

@@ -62,6 +62,12 @@ class WateringInfo extends StatelessWidget {
         'water_tip_record',
       ],
       accentIcon: Icons.water_drop,
+      resourceKeys: const [
+        'water_resource_schedule',
+        'water_resource_sensors',
+        'water_resource_collection',
+      ],
+      videoId: 'water_video_id'.tr,
     );
   }
 }

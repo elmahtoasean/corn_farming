@@ -62,6 +62,12 @@ class CollectingCorns extends StatelessWidget {
         'collect_tip_vests',
       ],
       accentIcon: Icons.agriculture,
+      resourceKeys: const [
+        'collect_resource_cleaning',
+        'collect_resource_drying',
+        'collect_resource_storage',
+      ],
+      videoId: 'collect_video_id'.tr,
     );
   }
 }

@@ -17,6 +17,7 @@ dependencies:
   google_fonts: ^6.2.1
   fluttertoast: ^8.2.12
   youtube_player_flutter: ^9.1.1
+  flutter_tts: ^3.8.5
 
 dev_dependencies:
   flutter_test:
@@ -33,15 +34,15 @@ flutter_icons:
 flutter_native_splash:
   android: true
   ios: true
-  color: "#FEF3E5"
-  color_dark: "#332828"
+  color: "#FDF3D9"
+  color_dark: "#1F2A17"
   image: assets/images/splash_android.png
   branding: assets/images/branding_desk.png
   branding_bottom_padding_ios: 90
 
   android_12:
-    color: "#FEF3E5"
-    color_dark: "#332828"
+    color: "#FDF3D9"
+    color_dark: "#1F2A17"
     image: assets/images/splash_android.png
     branding: assets/images/branding.png
     icon_background_color: "#FEF3E5"

@@ -34,7 +34,7 @@ class _RoleScreenState extends State<RoleScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -42,7 +42,7 @@ class _RoleScreenState extends State<RoleScreen> {
             end: Alignment.bottomCenter,
             colors: [
               theme.colorScheme.primary.withOpacity(0.1),
-              theme.colorScheme.background,
+              theme.colorScheme.surface,
             ],
           ),
         ),

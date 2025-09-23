@@ -8,6 +8,9 @@ import 'package:corn_farming/screens/tool_guide.dart';
 import 'package:corn_farming/screens/soil_type.dart';
 import 'package:corn_farming/utils/help.dart';
 import 'package:corn_farming/utils/seed_type.dart';
+import 'package:corn_farming/screens/profile_overview.dart';
+import 'package:corn_farming/screens/alerts_screen.dart';
+import 'package:corn_farming/screens/planner_screen.dart';
 
 import 'package:corn_farming/screens/tool_guide.dart';
 import 'package:corn_farming/screens/corn_facts.dart';
@@ -43,6 +46,9 @@ class RouteHelper {
   static const String ripeCorns = '/ripe-corns';
   static const String collectingCorns = '/collecting-corns';
   static const String marketingCorns = '/marketing-corns';
+  static const String profile = '/profile-overview';
+  static const String alerts = '/alerts';
+  static const String planner = '/planner';
 
   static String getInitialRoute() => language;
   static String getLanguageRoute() => language;
@@ -67,5 +73,8 @@ class RouteHelper {
     GetPage(name: ripeCorns, page: () => const RipeCorns()),
     GetPage(name: collectingCorns, page: () => const CollectingCorns()),
     GetPage(name: marketingCorns, page: () => const MarketingCorns()),
+    GetPage(name: profile, page: () => const ProfileOverview()),
+    GetPage(name: alerts, page: () => const AlertsScreen()),
+    GetPage(name: planner, page: () => const PlannerScreen()),
   ];
 }

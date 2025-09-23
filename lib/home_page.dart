@@ -1,3 +1,4 @@
+import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -40,148 +41,170 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    final List<Map<String, dynamic>> cards = getCards(userRole);
+    return GetBuilder<ThemeController>(
+      builder: (themeController) {
+        final List<Map<String, dynamic>> cards = getCards(userRole);
+        final media = MediaQuery.of(context);
+        final theme = Theme.of(context);
+        final sidebarWidth = _sidebarWidth(media.size.width);
 
-    final media = MediaQuery.of(context);
-    final theme = Theme.of(context);
-    final sidebarWidth = _sidebarWidth(media.size.width);
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  theme.colorScheme.primary.withOpacity(0.12),
-                  theme.colorScheme.background,
-                ],
-              ),
-            ),
-          ),
-          AnimatedPositioned(
-            duration: duration,
-            top: 0,
-            bottom: 0,
-            left: isSidebarOpen ? 0 : -sidebarWidth,
-            child: SizedBox(
-              width: sidebarWidth,
-              child: CustomSidebar(
-                onClose: () => setState(() => isSidebarOpen = false),
-              ),
-            ),
-          ),
-          AnimatedPositioned(
-            duration: duration,
-            curve: Curves.easeInOut,
-            left: isSidebarOpen ? sidebarWidth : 0,
-            right: isSidebarOpen ? -sidebarWidth : 0,
-            top: 0,
-            bottom: 0,
-            child: GestureDetector(
-              onTap: () {
-                if (isSidebarOpen) {
-                  setState(() => isSidebarOpen = false);
-                }
-              },
-              child: AbsorbPointer(
-                absorbing: isSidebarOpen,
-                child: Scaffold(
-                  backgroundColor: Colors.transparent,
-                  appBar: _CornAppBar(
-                    title: 'home_page'.tr,
-                    onMenuTap: () => setState(() => isSidebarOpen = !isSidebarOpen),
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          body: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      theme.colorScheme.primary.withOpacity(0.12),
+                      theme.colorScheme.surface,
+                    ],
                   ),
-                  body: SafeArea(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        final crossAxisCount = _gridCountForWidth(width);
-                        final spacing = width < 500 ? 12.0 : 20.0;
-                        final horizontalPadding = spacing + 8;
-                        final availableWidth =
-                            width - (spacing * (crossAxisCount - 1)) - (horizontalPadding * 2);
-                        final cardWidth = availableWidth / crossAxisCount;
-                        final cardHeight = width < 600
-                            ? 170.0
-                            : width < 1024
-                                ? cardWidth * 0.9
-                                : cardWidth * 0.8;
-                        final aspectRatio = cardWidth / cardHeight;
+                ),
+              ),
+              AnimatedPositioned(
+                duration: duration,
+                top: 0,
+                bottom: 0,
+                left: isSidebarOpen ? 0 : -sidebarWidth,
+                child: SizedBox(
+                  width: sidebarWidth,
+                  child: CustomSidebar(
+                    onClose: () => setState(() => isSidebarOpen = false),
+                    onNavigate: (route) {
+                      setState(() => isSidebarOpen = false);
+                      if (route.isEmpty) {
+                        return;
+                      }
+                      if (route == RouteHelper.home) {
+                        return;
+                      }
+                      Get.toNamed(route);
+                    },
+                  ),
+                ),
+              ),
+              AnimatedPositioned(
+                duration: duration,
+                curve: Curves.easeInOut,
+                left: isSidebarOpen ? sidebarWidth : 0,
+                right: isSidebarOpen ? -sidebarWidth : 0,
+                top: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    if (isSidebarOpen) {
+                      setState(() => isSidebarOpen = false);
+                    }
+                  },
+                  child: AbsorbPointer(
+                    absorbing: isSidebarOpen,
+                    child: Scaffold(
+                      backgroundColor: theme.colorScheme.surface,
+                      appBar: _CornAppBar(
+                        title: 'home_page'.tr,
+                        onMenuTap: () => setState(() => isSidebarOpen = !isSidebarOpen),
+                        onThemeTap: themeController.toggleThemeMode,
+                        isDarkMode: themeController.isDarkMode,
+                      ),
+                      body: SafeArea(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final width = constraints.maxWidth;
+                            final crossAxisCount = _gridCountForWidth(width);
+                            final spacing = width < 500 ? 12.0 : 20.0;
+                            final horizontalPadding = spacing + 8;
+                            final availableWidth = width -
+                                (spacing * (crossAxisCount - 1)) -
+                                (horizontalPadding * 2);
+                            final cardWidth = availableWidth / crossAxisCount;
+                            final cardHeight = width < 560
+                                ? 190.0
+                                : width < 1024
+                                    ? cardWidth * 0.85
+                                    : cardWidth * 0.75;
+                            final aspectRatio = cardWidth / cardHeight;
 
-                        return CustomScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: horizontalPadding,
-                                  vertical: spacing,
+                            return CustomScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              slivers: [
+                                SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: horizontalPadding,
+                                      vertical: spacing,
+                                    ),
+                                    child: _DashboardHeader(
+                                      userRole: userRole,
+                                      totalCards: cards.length,
+                                    ),
+                                  ),
                                 ),
-                                child: _DashboardHeader(
-                                  userRole: userRole,
-                                  totalCards: cards.length,
-                                ),
-                              ),
-                            ),
-                            SliverPadding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: horizontalPadding,
-                                vertical: spacing,
-                              ),
-                              sliver: SliverGrid(
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  crossAxisSpacing: spacing,
-                                  mainAxisSpacing: spacing,
-                                  childAspectRatio: aspectRatio,
-                                ),
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    final card = cards[index];
-                                    final iconName = card['icon'] as String;
-                                    final icon = _iconForName(iconName);
-                                    final colorValue = card['color'] as int?;
-                                    final accent = colorValue != null
-                                        ? Color(colorValue)
-                                        : theme.colorScheme.primary;
-                                    return _DashboardCard(
-                                      title: card['title'].toString().tr,
-                                      icon: icon,
-                                      accent: accent,
-                                      onTap: () {
-                                        Get.toNamed(card['route'] as String);
-                                        Fluttertoast.showToast(
-                                            msg: card['title'].toString().tr);
+                                SliverPadding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding,
+                                    vertical: spacing,
+                                  ),
+                                  sliver: SliverGrid(
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: spacing,
+                                      mainAxisSpacing: spacing,
+                                      childAspectRatio: aspectRatio,
+                                    ),
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) {
+                                        final card = cards[index];
+                                        final iconName = card['icon'] as String;
+                                        final icon = _iconForName(iconName);
+                                        final colorValue = card['color'] as int?;
+                                        final accent = colorValue != null
+                                            ? Color(colorValue)
+                                            : theme.colorScheme.primary;
+                                        final summaryKey = card['summary'] as String?;
+                                        final summary = summaryKey != null
+                                            ? summaryKey.tr
+                                            : 'home_card_hint'.tr;
+                                        return _DashboardCard(
+                                          title: card['title'].toString().tr,
+                                          icon: icon,
+                                          accent: accent,
+                                          summary: summary,
+                                          onTap: () {
+                                            Get.toNamed(card['route'] as String);
+                                            Fluttertoast.showToast(
+                                                msg: card['title'].toString().tr);
+                                          },
+                                        );
                                       },
-                                    );
-                                  },
-                                  childCount: cards.length,
+                                      childCount: cards.length,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 40),
-                            ),
-                          ],
-                        );
-                      },
+                                const SliverToBoxAdapter(
+                                  child: SizedBox(height: 40),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -201,10 +224,12 @@ class _HomePageState extends State<HomePage>
       return 1;
     } else if (width < 840) {
       return 2;
-    } else if (width < 1200) {
+    } else if (width < 1280) {
       return 3;
+    } else if (width < 1600) {
+      return 4;
     }
-    return 4;
+    return 5;
   }
 
   IconData _iconForName(String name) {
@@ -244,8 +269,15 @@ class _HomePageState extends State<HomePage>
 class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback onMenuTap;
+  final VoidCallback onThemeTap;
+  final bool isDarkMode;
 
-  const _CornAppBar({required this.title, required this.onMenuTap});
+  const _CornAppBar({
+    required this.title,
+    required this.onMenuTap,
+    required this.onThemeTap,
+    required this.isDarkMode,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(120);
@@ -257,88 +289,202 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.primary.withOpacity(isDark ? 0.65 : 0.45),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.25),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.onPrimary.withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: IconButton(
-                      onPressed: onMenuTap,
-                      icon: const Icon(Icons.menu_rounded),
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'home_appbar_subtitle'.tr,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimary.withOpacity(0.85),
-                          ),
-                        ),
+      child: SizedBox(
+        height: preferredSize.height,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ClipPath(
+                clipper: _CornAppBarClipper(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(isDark ? 0.55 : 0.4),
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.25),
+                        blurRadius: 26,
+                        offset: const Offset(0, 14),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color:
-                          theme.colorScheme.secondaryContainer.withOpacity(isDark ? 0.3 : 0.7),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Icon(
-                      Icons.eco_rounded,
-                      color: theme.colorScheme.onSecondaryContainer,
-                      size: 30,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+            Positioned(
+              right: -40,
+              top: -30,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              left: -30,
+              bottom: -40,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
+                ),
+              ),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        onPressed: onMenuTap,
+                        icon: const Icon(Icons.menu_rounded),
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: theme.colorScheme.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'home_appbar_subtitle'.tr,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.eco_rounded,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isDark ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'home_card_hint'.tr,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onPrimary.withOpacity(0.75),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        tooltip: isDarkMode
+                            ? 'switch_to_light_mode'.tr
+                            : 'switch_to_dark_mode'.tr,
+                        onPressed: onThemeTap,
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, animation) => RotationTransition(
+                            turns: Tween(begin: 0.75, end: 1.0).animate(animation),
+                            child: FadeTransition(opacity: animation, child: child),
+                          ),
+                          child: Icon(
+                            isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
+                            key: ValueKey(isDarkMode),
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _CornAppBarClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+      size.width * 0.25,
+      size.height,
+      size.width * 0.5,
+      size.height - 28,
+    );
+    path.quadraticBezierTo(
+      size.width * 0.8,
+      size.height - 60,
+      size.width,
+      size.height - 20,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _DashboardHeader extends StatelessWidget {
@@ -440,12 +586,14 @@ class _DashboardCard extends StatefulWidget {
   final IconData icon;
   final Color accent;
   final VoidCallback onTap;
+  final String summary;
 
   const _DashboardCard({
     required this.title,
     required this.icon,
     required this.accent,
     required this.onTap,
+    required this.summary,
   });
 
   @override
@@ -480,8 +628,8 @@ class _DashboardCardState extends State<_DashboardCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                widget.accent.withOpacity(isDark ? 0.55 : 0.85),
-                widget.accent.withOpacity(isDark ? 0.75 : 0.65),
+                widget.accent.withOpacity(isDark ? 0.55 : 0.88),
+                widget.accent.withOpacity(isDark ? 0.75 : 0.7),
               ],
             ),
           ),
@@ -526,9 +674,35 @@ class _DashboardCardState extends State<_DashboardCard> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'home_card_hint'.tr,
+                      widget.summary,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.play_circle_fill,
+                              size: 18, color: theme.colorScheme.onPrimary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'home_card_open'.tr,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 Map<int, Color> _colorSwatch = {
-  50: const Color(0xFFEAF6DF),
-  100: const Color(0xFFD6EDBF),
-  200: const Color(0xFFBDE390),
-  300: const Color(0xFFA3D561),
-  400: const Color(0xFF8EC943),
-  500: const Color(0xFF7CB342),
-  600: const Color(0xFF6E9F3A),
-  700: const Color(0xFF5F8A32),
-  800: const Color(0xFF4D6D27),
-  900: const Color(0xFF36491C),
+  50: const Color(0xFFF9FBE7),
+  100: const Color(0xFFEFF4C7),
+  200: const Color(0xFFDFEBA0),
+  300: const Color(0xFFCBE176),
+  400: const Color(0xFFB5D652),
+  500: const Color(0xFF9CC636),
+  600: const Color(0xFF7FB12B),
+  700: const Color(0xFF649521),
+  800: const Color(0xFF4C761A),
+  900: const Color(0xFF324F12),
 };
 
-MaterialColor customSwatch = MaterialColor(0xFF7CB342, _colorSwatch);
+MaterialColor customSwatch = MaterialColor(0xFF9CC636, _colorSwatch);

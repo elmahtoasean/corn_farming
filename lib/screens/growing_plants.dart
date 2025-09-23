@@ -62,6 +62,12 @@ class GrowingPlants extends StatelessWidget {
         'growing_tip_tracking',
       ],
       accentIcon: Icons.trending_up,
+      resourceKeys: const [
+        'growing_resource_canopy',
+        'growing_resource_fertility',
+        'growing_resource_lodging',
+      ],
+      videoId: 'growing_video_id'.tr,
     );
   }
 }

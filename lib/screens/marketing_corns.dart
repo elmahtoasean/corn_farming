@@ -62,6 +62,12 @@ class MarketingCorns extends StatelessWidget {
         'market_tip_updates',
       ],
       accentIcon: Icons.storefront,
+      resourceKeys: const [
+        'market_resource_contracts',
+        'market_resource_quality',
+        'market_resource_network',
+      ],
+      videoId: 'market_video_id'.tr,
     );
   }
 }

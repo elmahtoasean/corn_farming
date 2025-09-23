@@ -62,6 +62,12 @@ class PestManagement extends StatelessWidget {
         'pest_tip_training',
       ],
       accentIcon: Icons.bug_report,
+      resourceKeys: const [
+        'pest_resource_scouting',
+        'pest_resource_biocontrol',
+        'pest_resource_thresholds',
+      ],
+      videoId: 'pest_video_id'.tr,
     );
   }
 }
