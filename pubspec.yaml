@@ -34,18 +34,18 @@ flutter_icons:
 flutter_native_splash:
   android: true
   ios: true
-  color: "#FDF3D9"
+  color: "#F9F3E5"
   color_dark: "#1F2A17"
   image: assets/images/splash_android.png
   branding: assets/images/branding_desk.png
   branding_bottom_padding_ios: 90
 
   android_12:
-    color: "#FDF3D9"
+    color: "#F9F3E5"
     color_dark: "#1F2A17"
     image: assets/images/splash_android.png
     branding: assets/images/branding.png
-    icon_background_color: "#FEF3E5"
+    icon_background_color: "#F6B042"
     fullscreen: true
     branding_bottom_padding: 190
 
