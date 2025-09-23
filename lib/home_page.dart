@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:corn_farming/utils/corn_header.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +75,10 @@ class _HomePageState extends State<HomePage>
     await _tts.awaitSpeakCompletion(true);
     final languageCode =
         await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
-    await _tts.setLanguage(languageCode);
+    try {
+      await _tts.setLanguage(languageCode);
+    } catch (_) {}
+    await configureTtsVoice(_tts, languageCode, locale: Get.locale);
   }
 
   String _buildNarration(List<Map<String, dynamic>> cards) {
@@ -202,82 +207,117 @@ class _HomePageState extends State<HomePage>
                       body: SafeArea(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final width = constraints.maxWidth;
-                            final crossAxisCount = _gridCountForWidth(width);
-                            final spacing = width < 500 ? 12.0 : 20.0;
-                            final horizontalPadding = spacing + 8;
-                            final availableWidth = width -
-                                (spacing * (crossAxisCount - 1)) -
-                                (horizontalPadding * 2);
-                            final cardWidth = availableWidth / crossAxisCount;
-                            final cardHeight = width < 560
-                                ? 190.0
-                                : width < 1024
-                                    ? cardWidth * 0.85
-                                    : cardWidth * 0.75;
-                            final aspectRatio = cardWidth / cardHeight;
+                            final viewportWidth = constraints.maxWidth;
+                            final targetWidth =
+                                viewportWidth > 1240 ? 1120.0 : viewportWidth;
+                            final spacing = targetWidth < 520
+                                ? 12.0
+                                : targetWidth < 900
+                                    ? 16.0
+                                    : 20.0;
+                            final horizontalPadding = targetWidth < 420
+                                ? 16.0
+                                : targetWidth < 840
+                                    ? 20.0
+                                    : 24.0;
+                            final safeWidth = math.max(
+                              targetWidth - (horizontalPadding * 2),
+                              0.0,
+                            );
+                            final crossAxisCount =
+                                _gridCountForWidth(targetWidth);
+                            final rawCardWidth = crossAxisCount == 1 ||
+                                    safeWidth <= 0
+                                ? safeWidth
+                                : (safeWidth -
+                                        (spacing * (crossAxisCount - 1))) /
+                                    crossAxisCount;
+                            final cardWidth = rawCardWidth <= 0
+                                ? (safeWidth / crossAxisCount)
+                                : rawCardWidth;
+                            final cardHeight = targetWidth < 560
+                                ? cardWidth * 1.08
+                                : targetWidth < 1024
+                                    ? cardWidth * 0.9
+                                    : cardWidth * 0.78;
+                            final aspectRatio = cardHeight > 0
+                                ? cardWidth / cardHeight
+                                : 1.0;
 
-                            return CustomScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              slivers: [
-                                SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: horizontalPadding,
-                                      vertical: spacing,
+                            return Center(
+                              child: SizedBox(
+                                width: targetWidth,
+                                child: CustomScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  slivers: [
+                                    SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: horizontalPadding,
+                                          vertical: spacing,
+                                        ),
+                                        child: _DashboardHeader(
+                                          userRole: userRole,
+                                          totalCards: cards.length,
+                                        ),
+                                      ),
                                     ),
-                                    child: _DashboardHeader(
-                                      userRole: userRole,
-                                      totalCards: cards.length,
-                                    ),
-                                  ),
-                                ),
-                                SliverPadding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: horizontalPadding,
-                                    vertical: spacing,
-                                  ),
-                                  sliver: SliverGrid(
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: crossAxisCount,
-                                      crossAxisSpacing: spacing,
-                                      mainAxisSpacing: spacing,
-                                      childAspectRatio: aspectRatio,
-                                    ),
-                                    delegate: SliverChildBuilderDelegate(
-                                      (context, index) {
-                                        final card = cards[index];
-                                        final iconName = card['icon'] as String;
-                                        final icon = _iconForName(iconName);
-                                        final colorValue = card['color'] as int?;
-                                        final accent = colorValue != null
-                                            ? Color(colorValue)
-                                            : theme.colorScheme.primary;
-                                        final summaryKey = card['summary'] as String?;
-                                        final summary = summaryKey != null
-                                            ? summaryKey.tr
-                                            : 'home_card_hint'.tr;
-                                        return _DashboardCard(
-                                          title: card['title'].toString().tr,
-                                          icon: icon,
-                                          accent: accent,
-                                          summary: summary,
-                                          onTap: () {
-                                            Get.toNamed(card['route'] as String);
-                                            Fluttertoast.showToast(
-                                                msg: card['title'].toString().tr);
+                                    SliverPadding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: horizontalPadding,
+                                        vertical: spacing,
+                                      ),
+                                      sliver: SliverGrid(
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: crossAxisCount,
+                                          crossAxisSpacing: spacing,
+                                          mainAxisSpacing: spacing,
+                                          childAspectRatio: aspectRatio,
+                                        ),
+                                        delegate: SliverChildBuilderDelegate(
+                                          (context, index) {
+                                            final card = cards[index];
+                                            final iconName =
+                                                card['icon'] as String;
+                                            final icon = _iconForName(iconName);
+                                            final colorValue =
+                                                card['color'] as int?;
+                                            final accent = colorValue != null
+                                                ? Color(colorValue)
+                                                : theme.colorScheme.primary;
+                                            final summaryKey =
+                                                card['summary'] as String?;
+                                            final summary = summaryKey != null
+                                                ? summaryKey.tr
+                                                : 'home_card_hint'.tr;
+                                            return _DashboardCard(
+                                              title:
+                                                  card['title'].toString().tr,
+                                              icon: icon,
+                                              accent: accent,
+                                              summary: summary,
+                                              onTap: () {
+                                                Get.toNamed(
+                                                    card['route'] as String);
+                                                Fluttertoast.showToast(
+                                                  msg: card['title']
+                                                      .toString()
+                                                      .tr,
+                                                );
+                                              },
+                                            );
                                           },
-                                        );
-                                      },
-                                      childCount: cards.length,
+                                          childCount: cards.length,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(height: spacing * 2),
+                                    ),
+                                  ],
                                 ),
-                                const SliverToBoxAdapter(
-                                  child: SizedBox(height: 40),
-                                ),
-                              ],
+                              ),
                             );
                           },
                         ),
