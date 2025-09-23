@@ -156,7 +156,6 @@ class _CornDetailPageState extends State<CornDetailPage> {
   void dispose() {
     _youtubeController?.dispose();
     _tts.stop();
-    _tts.dispose();
     super.dispose();
   }
 
@@ -691,13 +690,10 @@ class _VideoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return YoutubePlayerBuilder(
-      player: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: YoutubePlayer(
-          controller: controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: theme.colorScheme.primary,
-        ),
+      player: YoutubePlayer(
+        controller: controller,
+        showVideoProgressIndicator: true,
+        progressIndicatorColor: theme.colorScheme.primary,
       ),
       builder: (context, player) {
         return Container(

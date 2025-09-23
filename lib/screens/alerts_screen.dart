@@ -1,5 +1,8 @@
 import 'package:corn_farming/utils/detail_page.dart';
 import 'package:flutter/material.dart';
+import 'package:corn_farming/controller/localization_controller.dart';
+import 'package:corn_farming/models/language_model.dart';
+import 'package:get/get.dart'; 
 
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
@@ -67,7 +70,7 @@ class AlertsScreen extends StatelessWidget {
         'alerts_resource_extension',
         'alerts_resource_response',
       ],
-      videoId: 'alerts_video_id'.tr,
+      videoId: 'alerts_video_id'.tr, // Ensure 'get' package is imported for 'tr'
     );
   }
 }

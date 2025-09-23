@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
                     color: lightScheme.onSurface,
                   ),
             ),
-            cardTheme: CardTheme(
+            cardTheme: CardThemeData(
               margin: const EdgeInsets.all(0),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
@@ -101,7 +101,7 @@ class MyApp extends StatelessWidget {
                     color: darkScheme.onSurface,
                   ),
             ),
-            cardTheme: CardTheme(
+            cardTheme: CardThemeData(
               margin: const EdgeInsets.all(0),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
