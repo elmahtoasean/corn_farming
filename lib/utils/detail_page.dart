@@ -99,6 +99,7 @@ class _CornDetailPageState extends State<CornDetailPage> {
           autoPlay: false,
           mute: false,
           enableCaption: true,
+          useHybridComposition: true,
         ),
       );
     }
@@ -129,10 +130,6 @@ class _CornDetailPageState extends State<CornDetailPage> {
 
   Future<void> _configureVoice() async {
     await _tts.setVolume(1.0);
-    final localeCode = Get.locale?.languageCode.toLowerCase();
-    final speechRate = localeCode == 'bn' ? 1.0 : 0.75;
-    await _tts.setSpeechRate(speechRate);
-    await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
     final languageCode = await configureTtsLanguage(
       _tts,
@@ -140,6 +137,13 @@ class _CornDetailPageState extends State<CornDetailPage> {
       defaultLanguage: 'en-US',
     );
     await configureTtsVoice(_tts, languageCode, locale: Get.locale);
+    try {
+      await _tts.setLanguage(languageCode);
+    } catch (_) {}
+    final localeCode = Get.locale?.languageCode.toLowerCase();
+    final speechRate = localeCode == 'bn' ? 0.9 : 0.75;
+    await _tts.setSpeechRate(speechRate);
+    await _tts.setPitch(1.0);
   }
 
   String _buildNarration() {
@@ -826,12 +830,16 @@ class _TipChip extends StatelessWidget {
         children: [
           Icon(Icons.check_circle, size: 16, color: textColor),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+              softWrap: true,
+              overflow: TextOverflow.visible,
+            ),
           ),
         ],
       ),
