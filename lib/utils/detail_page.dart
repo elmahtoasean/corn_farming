@@ -1,5 +1,6 @@
 import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:corn_farming/utils/corn_header.dart';
+import 'package:corn_farming/utils/tts_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
@@ -109,12 +110,9 @@ class _CornDetailPageState extends State<CornDetailPage> {
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
-    final locale = Get.locale;
-    if (locale != null && locale.languageCode.toLowerCase() == 'bn') {
-      await _tts.setLanguage('bn-BD');
-    } else {
-      await _tts.setLanguage('en-US');
-    }
+    final languageCode =
+        await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
+    await _tts.setLanguage(languageCode);
   }
 
   String _buildNarration() {
