@@ -117,7 +117,6 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _tts.stop();
-    _tts.dispose();
     super.dispose();
   }
 
