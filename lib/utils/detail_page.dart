@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:corn_farming/utils/corn_header.dart';
 import 'package:corn_farming/utils/tts_utils.dart';
-import 'package:corn_farming/widgets/narration_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
@@ -84,14 +83,9 @@ class CornDetailPage extends StatefulWidget {
 }
 
 class _CornDetailPageState extends State<CornDetailPage> {
-  static const String _pageNarrationId = 'detail_page_overview';
-  static const String _introNarrationId = 'detail_intro';
-  static const String _resourcesNarrationId = 'detail_resources';
-
   final FlutterTts _tts = FlutterTts();
   YoutubePlayerController? _youtubeController;
   bool _isSpeaking = false;
-  String? _activeNarrationId;
 
   @override
   void initState() {
@@ -117,27 +111,22 @@ class _CornDetailPageState extends State<CornDetailPage> {
         setState(() => _isSpeaking = true);
       }
     });
-    _tts.setCompletionHandler(_handleSpeechStopped);
-    _tts.setCancelHandler(_handleSpeechStopped);
-    _tts.setPauseHandler(_handleSpeechStopped);
-  }
-
-  void _handleSpeechStopped() {
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _isSpeaking = false;
-      _activeNarrationId = null;
+    _tts.setCompletionHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+    _tts.setCancelHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
+    _tts.setPauseHandler(() {
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
     });
   }
-
-  Future<void> _stopNarration() async {
-    await _tts.stop();
-    _handleSpeechStopped();
-  }
-
-  bool _isNarrating(String id) => _isSpeaking && _activeNarrationId == id;
 
   Future<void> _configureVoice() async {
     await _tts.setVolume(1.0);
@@ -155,114 +144,6 @@ class _CornDetailPageState extends State<CornDetailPage> {
     final speechRate = localeCode == 'bn' ? 0.9 : 0.75;
     await _tts.setSpeechRate(speechRate);
     await _tts.setPitch(1.0);
-  }
-
-  Future<void> _speakNarration(String id, String narration) async {
-    final text = narration.trim();
-    if (text.isEmpty) {
-      return;
-    }
-
-    if (_isNarrating(id)) {
-      await _stopNarration();
-      return;
-    }
-
-    await _stopNarration();
-    await _configureVoice();
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _activeNarrationId = id;
-      _isSpeaking = true;
-    });
-
-    await _tts.speak(text);
-  }
-
-  String _sectionNarrationId(CornDetailSection section) =>
-      'detail_section_${section.titleKey}';
-
-  String _timelineNarrationId(CornTimelineItem item) =>
-      'detail_timeline_${item.titleKey}';
-
-  String _videoNarrationId(String? videoId) =>
-      'detail_video_${videoId ?? 'primary'}';
-
-  String _buildIntroNarration() {
-    final buffer = StringBuffer();
-    buffer.writeln(widget.titleKey.tr);
-    buffer.writeln(widget.introKey.tr);
-    if (widget.quickTipKeys.isNotEmpty) {
-      buffer.writeln('detail_quick_tip_heading'.tr);
-      for (final tip in widget.quickTipKeys) {
-        buffer.writeln('- ${tip.tr}');
-      }
-    }
-    return buffer.toString();
-  }
-
-  String _buildSectionNarration(CornDetailSection section) {
-    final buffer = StringBuffer();
-    buffer.writeln(section.titleKey.tr);
-    buffer.writeln(section.descriptionKey.tr);
-    for (final highlight in section.highlightKeys) {
-      buffer.writeln(highlight.tr);
-    }
-    return buffer.toString();
-  }
-
-  String _buildTimelineNarration(CornTimelineItem item) {
-    return '${item.titleKey.tr}. ${item.detailKey.tr}';
-  }
-
-  String _buildResourceNarration() {
-    if (widget.resourceKeys.isEmpty) {
-      return '';
-    }
-    final buffer = StringBuffer();
-    buffer.writeln('detail_resources_title'.tr);
-    for (final resource in widget.resourceKeys) {
-      buffer.writeln(resource.tr);
-    }
-    return buffer.toString();
-  }
-
-  String _buildVideoNarration(String title, String caption) {
-    final buffer = StringBuffer();
-    buffer.writeln(title);
-    buffer.writeln(caption);
-    return buffer.toString();
-  }
-
-  Future<void> _toggleIntroNarration() async {
-    final narration = _buildIntroNarration();
-    await _speakNarration(_introNarrationId, narration);
-  }
-
-  Future<void> _toggleSectionNarration(CornDetailSection section) async {
-    final narration = _buildSectionNarration(section);
-    await _speakNarration(_sectionNarrationId(section), narration);
-  }
-
-  Future<void> _toggleTimelineNarration(CornTimelineItem item) async {
-    final narration = _buildTimelineNarration(item);
-    await _speakNarration(_timelineNarrationId(item), narration);
-  }
-
-  Future<void> _toggleResourceNarration() async {
-    final narration = _buildResourceNarration();
-    if (narration.isEmpty) {
-      return;
-    }
-    await _speakNarration(_resourcesNarrationId, narration);
-  }
-
-  Future<void> _toggleVideoNarration(String title, String caption) async {
-    final narration = _buildVideoNarration(title, caption);
-    await _speakNarration(_videoNarrationId(widget.videoId), narration);
   }
 
   String _buildNarration() {
@@ -298,8 +179,18 @@ class _CornDetailPageState extends State<CornDetailPage> {
   }
 
   Future<void> _toggleNarration() async {
-    final narration = _buildNarration();
-    await _speakNarration(_pageNarrationId, narration);
+    if (_isSpeaking) {
+      await _tts.stop();
+      setState(() => _isSpeaking = false);
+      return;
+    }
+    final narration = _buildNarration().trim();
+    if (narration.isEmpty) {
+      return;
+    }
+    await _configureVoice();
+    setState(() => _isSpeaking = true);
+    await _tts.speak(narration);
   }
 
   @override
@@ -319,7 +210,7 @@ class _CornDetailPageState extends State<CornDetailPage> {
           appBar: _CornDetailAppBar(
             title: widget.titleKey.tr,
             accentIcon: widget.accentIcon,
-            isNarrating: _isNarrating(_pageNarrationId),
+            isNarrating: _isSpeaking,
             onBack: () => Navigator.of(context).maybePop(),
             onNarrationTap: _toggleNarration,
             onThemeTap: themeController.toggleThemeMode,
@@ -407,30 +298,13 @@ class _CornDetailPageState extends State<CornDetailPage> {
                                     .map((tip) => tip.tr)
                                     .toList(),
                                 accentIcon: widget.accentIcon,
-                                onNarrationTap: _toggleIntroNarration,
-                                isNarrating: _isNarrating(_introNarrationId),
                               ),
                               if (_youtubeController != null) ...[
                                 SizedBox(height: spacing + 8),
-                                Builder(
-                                  builder: (context) {
-                                    final videoTitle =
-                                        'detail_video_title'.tr;
-                                    final videoCaption =
-                                        'detail_video_hint'.tr;
-                                    return _VideoCard(
-                                      controller: _youtubeController!,
-                                      title: videoTitle,
-                                      caption: videoCaption,
-                                      isNarrating: _isNarrating(
-                                          _videoNarrationId(widget.videoId)),
-                                      onNarrationTap: () =>
-                                          _toggleVideoNarration(
-                                        videoTitle,
-                                        videoCaption,
-                                      ),
-                                    );
-                                  },
+                                _VideoCard(
+                                  controller: _youtubeController!,
+                                  title: 'detail_video_title'.tr,
+                                  caption: 'detail_video_hint'.tr,
                                 ),
                               ],
                               SizedBox(height: spacing + 4),
@@ -445,11 +319,6 @@ class _CornDetailPageState extends State<CornDetailPage> {
                                             : sectionWidth,
                                         child: _DetailSectionCard(
                                           section: section,
-                                          isNarrating: _isNarrating(
-                                              _sectionNarrationId(section)),
-                                          onNarrationTap: () =>
-                                              _toggleSectionNarration(
-                                                  section),
                                         ),
                                       ),
                                     )
@@ -484,14 +353,7 @@ class _CornDetailPageState extends State<CornDetailPage> {
                                           width: timelineTwoColumn
                                               ? timelineWidth
                                               : safeWidth,
-                                          child: _TimelineCard(
-                                            item: entry,
-                                            isNarrating: _isNarrating(
-                                                _timelineNarrationId(entry)),
-                                            onNarrationTap: () =>
-                                                _toggleTimelineNarration(
-                                                    entry),
-                                          ),
+                                          child: _TimelineCard(item: entry),
                                         ),
                                       )
                                       .toList(),
@@ -503,9 +365,6 @@ class _CornDetailPageState extends State<CornDetailPage> {
                                   resources: widget.resourceKeys
                                       .map((key) => key.tr)
                                       .toList(),
-                                  isNarrating:
-                                      _isNarrating(_resourcesNarrationId),
-                                  onNarrationTap: _toggleResourceNarration,
                                 ),
                               ],
                               SizedBox(height: spacing * 2.4),
@@ -701,15 +560,11 @@ class _IntroCard extends StatelessWidget {
   final String intro;
   final List<String> quickTips;
   final IconData accentIcon;
-  final VoidCallback onNarrationTap;
-  final bool isNarrating;
 
   const _IntroCard({
     required this.intro,
     required this.quickTips,
     required this.accentIcon,
-    required this.onNarrationTap,
-    required this.isNarrating,
   });
 
   @override
@@ -756,32 +611,11 @@ class _IntroCard extends StatelessWidget {
             ),
           );
 
-          final buttonSize = isCompact ? 40.0 : 44.0;
-          final buttonPadding = isCompact ? 8.0 : 10.0;
-          final buttonIconSize = isCompact ? 20.0 : 22.0;
-          final listenButton = NarrationToggleButton(
-            isActive: isNarrating,
-            onPressed: onNarrationTap,
-            backgroundColor: Colors.white.withOpacity(0.22),
-            iconColor: Colors.white,
-            size: buttonSize,
-            padding: EdgeInsets.all(buttonPadding),
-            iconSize: buttonIconSize,
-            startTooltip: 'detail_listen'.tr,
-            stopTooltip: 'detail_stop_listening'.tr,
-          );
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isCompact) ...[
-                Row(
-                  children: [
-                    iconBadge,
-                    const Spacer(),
-                    listenButton,
-                  ],
-                ),
+                iconBadge,
                 const SizedBox(height: 14),
                 introText,
               ] else
@@ -791,8 +625,6 @@ class _IntroCard extends StatelessWidget {
                     iconBadge,
                     const SizedBox(width: 16),
                     Expanded(child: introText),
-                    const SizedBox(width: 12),
-                    listenButton,
                   ],
                 ),
               if (quickTips.isNotEmpty) ...[
@@ -827,14 +659,8 @@ class _IntroCard extends StatelessWidget {
 
 class _DetailSectionCard extends StatelessWidget {
   final CornDetailSection section;
-  final VoidCallback onNarrationTap;
-  final bool isNarrating;
 
-  const _DetailSectionCard({
-    required this.section,
-    required this.onNarrationTap,
-    required this.isNarrating,
-  });
+  const _DetailSectionCard({required this.section});
 
   @override
   Widget build(BuildContext context) {
@@ -875,34 +701,11 @@ class _DetailSectionCard extends StatelessWidget {
             ),
           );
 
-          final buttonSize = isCompact ? 38.0 : 42.0;
-          final buttonPadding = isCompact ? 7.0 : 8.0;
-          final buttonIconSize = isCompact ? 18.0 : 20.0;
-          final listenButton = NarrationToggleButton(
-            isActive: isNarrating,
-            onPressed: onNarrationTap,
-            backgroundColor:
-                theme.colorScheme.primary.withOpacity(0.12),
-            iconColor: theme.colorScheme.primary,
-            size: buttonSize,
-            padding: EdgeInsets.all(buttonPadding),
-            iconSize: buttonIconSize,
-            startTooltip: 'detail_listen'.tr,
-            stopTooltip: 'detail_stop_listening'.tr,
-          );
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isCompact) ...[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    iconBadge,
-                    const Spacer(),
-                    listenButton,
-                  ],
-                ),
+                iconBadge,
                 const SizedBox(height: 12),
                 titleWidget,
               ] else
@@ -912,8 +715,6 @@ class _DetailSectionCard extends StatelessWidget {
                     iconBadge,
                     const SizedBox(width: 12),
                     Expanded(child: titleWidget),
-                    const SizedBox(width: 12),
-                    listenButton,
                   ],
                 ),
               const SizedBox(height: 12),
@@ -948,14 +749,8 @@ class _DetailSectionCard extends StatelessWidget {
 
 class _TimelineCard extends StatelessWidget {
   final CornTimelineItem item;
-  final VoidCallback onNarrationTap;
-  final bool isNarrating;
 
-  const _TimelineCard({
-    required this.item,
-    required this.onNarrationTap,
-    required this.isNarrating,
-  });
+  const _TimelineCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -970,20 +765,6 @@ class _TimelineCard extends StatelessWidget {
     final iconColor = isDark
         ? Colors.white
         : theme.colorScheme.primary.withOpacity(0.9);
-    final buttonBackground = isDark
-        ? Colors.white.withOpacity(0.18)
-        : theme.colorScheme.primary.withOpacity(0.14);
-    final listenButton = NarrationToggleButton(
-      isActive: isNarrating,
-      onPressed: onNarrationTap,
-      backgroundColor: buttonBackground,
-      iconColor: iconColor,
-      size: 40,
-      padding: const EdgeInsets.all(8),
-      iconSize: 20,
-      startTooltip: 'detail_listen'.tr,
-      stopTooltip: 'detail_stop_listening'.tr,
-    );
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -1009,8 +790,6 @@ class _TimelineCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              listenButton,
             ],
           ),
           const SizedBox(height: 10),
@@ -1072,15 +851,11 @@ class _VideoCard extends StatelessWidget {
   final YoutubePlayerController controller;
   final String title;
   final String caption;
-  final VoidCallback onNarrationTap;
-  final bool isNarrating;
 
   const _VideoCard({
     required this.controller,
     required this.title,
     required this.caption,
-    required this.onNarrationTap,
-    required this.isNarrating,
   });
 
   @override
@@ -1093,17 +868,6 @@ class _VideoCard extends StatelessWidget {
         progressIndicatorColor: theme.colorScheme.primary,
       ),
       builder: (context, player) {
-        final listenButton = NarrationToggleButton(
-          isActive: isNarrating,
-          onPressed: onNarrationTap,
-          backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-          iconColor: theme.colorScheme.primary,
-          size: 42,
-          padding: const EdgeInsets.all(8),
-          iconSize: 20,
-          startTooltip: 'detail_listen'.tr,
-          stopTooltip: 'detail_stop_listening'.tr,
-        );
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -1144,8 +908,6 @@ class _VideoCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  listenButton,
                 ],
               ),
               const SizedBox(height: 14),
@@ -1170,29 +932,12 @@ class _VideoCard extends StatelessWidget {
 
 class _ResourceList extends StatelessWidget {
   final List<String> resources;
-  final VoidCallback onNarrationTap;
-  final bool isNarrating;
 
-  const _ResourceList({
-    required this.resources,
-    required this.onNarrationTap,
-    required this.isNarrating,
-  });
+  const _ResourceList({required this.resources});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final listenButton = NarrationToggleButton(
-      isActive: isNarrating,
-      onPressed: onNarrationTap,
-      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-      iconColor: theme.colorScheme.primary,
-      size: 42,
-      padding: const EdgeInsets.all(8),
-      iconSize: 20,
-      startTooltip: 'detail_listen'.tr,
-      stopTooltip: 'detail_stop_listening'.tr,
-    );
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -1205,21 +950,12 @@ class _ResourceList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  'detail_resources_title'.tr,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              listenButton,
-            ],
+          Text(
+            'detail_resources_title'.tr,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 14),
           ...resources.map(
