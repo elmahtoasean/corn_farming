@@ -200,94 +200,102 @@ class _CornDetailPageState extends State<CornDetailPage> {
             ),
             child: SafeArea(
               child: LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final columnCount = width > 1100
-                  ? 3
-                  : width > 720
-                      ? 2
-                      : 1;
-              final itemWidth = columnCount == 1
-                  ? width
-                  : (width - (columnCount - 1) * 20) / columnCount;
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final columnCount = width > 1100
+                      ? 3
+                      : width > 720
+                          ? 2
+                          : 1;
+                  final itemWidth = columnCount == 1
+                      ? width
+                      : (width - (columnCount - 1) * 20) / columnCount;
 
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  horizontal: width < 420 ? 16 : 24,
-                  vertical: 24,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _IntroCard(
-                      intro: widget.introKey.tr,
-                      quickTips: widget.quickTipKeys.map((tip) => tip.tr).toList(),
-                      accentIcon: widget.accentIcon,
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width < 420 ? 16 : 24,
+                      vertical: 24,
                     ),
-                    if (_youtubeController != null) ...[
-                      const SizedBox(height: 24),
-                      _VideoCard(
-                        controller: _youtubeController!,
-                        title: 'detail_video_title'.tr,
-                        caption: 'detail_video_hint'.tr,
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      children: widget.sections
-                          .map((section) => SizedBox(
-                                width: itemWidth.clamp(260, width),
-                                child: _DetailSectionCard(section: section),
-                              ))
-                          .toList(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _IntroCard(
+                          intro: widget.introKey.tr,
+                          quickTips: widget.quickTipKeys
+                              .map((tip) => tip.tr)
+                              .toList(),
+                          accentIcon: widget.accentIcon,
+                        ),
+                        if (_youtubeController != null) ...[
+                          const SizedBox(height: 24),
+                          _VideoCard(
+                            controller: _youtubeController!,
+                            title: 'detail_video_title'.tr,
+                            caption: 'detail_video_hint'.tr,
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 20,
+                          runSpacing: 20,
+                          children: widget.sections
+                              .map((section) => SizedBox(
+                                    width: itemWidth.clamp(260, width),
+                                    child: _DetailSectionCard(section: section),
+                                  ))
+                              .toList(),
+                        ),
+                        if (widget.supplementalBuilders.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          ...widget.supplementalBuilders.map(
+                            (builder) => Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: builder(context, width),
+                            ),
+                          ),
+                        ],
+                        if (widget.timeline.isNotEmpty) ...[
+                          const SizedBox(height: 32),
+                          Text(
+                            'seasonal_timeline'.tr,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 20,
+                            runSpacing: 20,
+                            children: widget.timeline
+                                .map((entry) => SizedBox(
+                                      width: width > 840
+                                          ? (width / 2) - 32
+                                          : double.infinity,
+                                      child: _TimelineCard(item: entry),
+                                    ))
+                                .toList(),
+                          ),
+                        ],
+                        if (widget.resourceKeys.isNotEmpty) ...[
+                          const SizedBox(height: 32),
+                          _ResourceList(
+                            resources: widget.resourceKeys
+                                .map((key) => key.tr)
+                                .toList(),
+                          ),
+                        ],
+                        const SizedBox(height: 48),
+                      ],
                     ),
-                    if (widget.supplementalBuilders.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      ...widget.supplementalBuilders.map(
-                        (builder) => Padding(
-                          padding: const EdgeInsets.only(bottom: 24),
-                          child: builder(context, width),
-                        ),
-                      ),
-                    ],
-                    if (widget.timeline.isNotEmpty) ...[
-                      const SizedBox(height: 32),
-                      Text(
-                        'seasonal_timeline'.tr,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 20,
-                        runSpacing: 20,
-                        children: widget.timeline
-                            .map((entry) => SizedBox(
-                                  width: width > 840 ? (width / 2) - 32 : double.infinity,
-                                  child: _TimelineCard(item: entry),
-                                ))
-                            .toList(),
-                      ),
-                    ],
-                    if (widget.resourceKeys.isNotEmpty) ...[
-                      const SizedBox(height: 32),
-                      _ResourceList(
-                        resources: widget.resourceKeys.map((key) => key.tr).toList(),
-                      ),
-                    ],
-                    const SizedBox(height: 48),
-                  ],
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
