@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'utils/user_cards.dart';
 import 'utils/app_route.dart';
 import 'utils/sidebar.dart';
+import 'utils/tts_utils.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -70,12 +71,9 @@ class _HomePageState extends State<HomePage>
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);
-    final locale = Get.locale;
-    if (locale != null && locale.languageCode.toLowerCase() == 'bn') {
-      await _tts.setLanguage('bn-BD');
-    } else {
-      await _tts.setLanguage('en-US');
-    }
+    final languageCode =
+        await resolveTtsLanguage(_tts, Get.locale, defaultLanguage: 'en-US');
+    await _tts.setLanguage(languageCode);
   }
 
   String _buildNarration(List<Map<String, dynamic>> cards) {
@@ -685,82 +683,142 @@ class _DashboardCardState extends State<_DashboardCard> {
               ],
             ),
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -24,
-                top: -24,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final height = constraints.maxHeight;
+              final isCompactWidth = width < 240;
+              final isCompactHeight = height < 220;
+              final isTight = width < 200 || height < 190;
+              final isCompact = isCompactWidth || isCompactHeight || isTight;
+
+              final circleSize = isCompact ? 100.0 : 120.0;
+              final circleOffset = isCompact ? -20.0 : -24.0;
+              final contentPadding = isTight
+                  ? 14.0
+                  : isCompact
+                      ? 18.0
+                      : 20.0;
+              final iconPadding = isTight
+                  ? 10.0
+                  : isCompact
+                      ? 12.0
+                      : 14.0;
+              final iconSize = isTight
+                  ? 24.0
+                  : isCompact
+                      ? 28.0
+                      : 32.0;
+              final titleFontSize = isTight
+                  ? 16.0
+                  : isCompact
+                      ? 17.0
+                      : null;
+              final summaryFontSize = isTight
+                  ? 12.0
+                  : isCompact
+                      ? 13.0
+                      : null;
+              final summaryLines = isTight ? 2 : 3;
+              final spacingAfterIcon = isCompact ? 12.0 : 16.0;
+              final spacingAfterTitle = isCompact ? 6.0 : 8.0;
+              final actionSpacing = isCompact ? 10.0 : 12.0;
+              final actionPadding = EdgeInsets.symmetric(
+                horizontal: isCompact ? 10.0 : 12.0,
+                vertical: isCompact ? 5.0 : 6.0,
+              );
+              final actionIconSize = isCompact ? 16.0 : 18.0;
+              final actionLabelStyle = theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: isCompact ? 11.0 : null,
+              );
+
+              return Stack(
+                children: [
+                  Positioned(
+                    right: circleOffset,
+                    top: circleOffset,
+                    child: Container(
+                      width: circleSize,
+                      height: circleSize,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.15),
                         shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        widget.icon,
-                        size: 32,
-                        color: theme.colorScheme.onPrimary,
+                        color: Colors.white.withOpacity(0.08),
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      widget.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.summary,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.85),
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_circle_fill,
-                              size: 18, color: theme.colorScheme.onPrimary),
-                          const SizedBox(width: 6),
-                          Text(
-                            'home_card_open'.tr,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onPrimary,
-                              fontWeight: FontWeight.w600,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(contentPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(iconPadding),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onPrimary.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            size: iconSize,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                        SizedBox(height: spacingAfterIcon),
+                        Text(
+                          widget.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: titleFontSize,
+                          ),
+                        ),
+                        SizedBox(height: spacingAfterTitle),
+                        Flexible(
+                          fit: FlexFit.tight,
+                          child: Text(
+                            widget.summary,
+                            maxLines: summaryLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color:
+                                  theme.colorScheme.onPrimary.withOpacity(0.85),
+                              height: 1.25,
+                              fontSize: summaryFontSize,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: actionSpacing),
+                        Container(
+                          padding: actionPadding,
+                          decoration: BoxDecoration(
+                            color:
+                                theme.colorScheme.onPrimary.withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.play_circle_fill,
+                                size: actionIconSize,
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'home_card_open'.tr,
+                                style: actionLabelStyle,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
