@@ -1,13 +1,15 @@
-// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
-import 'dart:ui' as ui;
-
 import 'package:flutter/widgets.dart';
+// Remove this import: import 'dart:ui' as ui;
+// Add this import instead:
+import 'dart:ui_web' as ui_web;
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 Widget buildYoutubeEmbed(String videoId) {
   final viewType = 'youtube-embed-$videoId-${DateTime.now().microsecondsSinceEpoch}';
 
-  ui.platformViewRegistry.registerViewFactory(viewType, (int _) {
+  // Use ui_web.platformViewRegistry instead of ui.platformViewRegistry
+  ui_web.platformViewRegistry.registerViewFactory(viewType, (int _) {
     final iframe = html.IFrameElement()
       ..width = '100%'
       ..height = '100%'

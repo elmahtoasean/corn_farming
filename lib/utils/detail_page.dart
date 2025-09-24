@@ -130,24 +130,54 @@ class _CornDetailPageState extends State<CornDetailPage> {
         setState(() => _isSpeaking = false);
       }
     });
+    _tts.setErrorHandler((msg) {
+      print('TTS Error: $msg');
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
   }
 
   Future<void> _configureVoice() async {
-    await _tts.setVolume(1.0);
-    await _tts.awaitSpeakCompletion(true);
-    final languageCode = await configureTtsLanguage(
-      _tts,
-      Get.locale,
-      defaultLanguage: 'en-US',
-    );
-    await configureTtsVoice(_tts, languageCode, locale: Get.locale);
     try {
-      await _tts.setLanguage(languageCode);
-    } catch (_) {}
-    final localeCode = Get.locale?.languageCode.toLowerCase();
-    final speechRate = localeCode == 'bn' ? 0.9 : 0.75;
-    await _tts.setSpeechRate(speechRate);
-    await _tts.setPitch(1.0);
+      await _tts.setVolume(1.0);
+      await _tts.awaitSpeakCompletion(true);
+      
+      print("Configuring TTS for locale: ${Get.locale}");
+      
+      // Debug Bengali TTS if needed
+      if (Get.locale?.languageCode.toLowerCase() == 'bn') {
+        await debugBengaliTTS(_tts);
+      }
+      
+      final languageCode = await configureTtsLanguage(
+        _tts,
+        Get.locale,
+        defaultLanguage: 'en-US',
+      );
+      
+      await configureTtsVoice(_tts, languageCode, locale: Get.locale);
+      
+      // Language-specific speech rate
+      final localeCode = Get.locale?.languageCode.toLowerCase();
+      final speechRate = localeCode == 'bn' ? 0.9 : 0.75;
+      
+      await _tts.setSpeechRate(speechRate);
+      await _tts.setPitch(1.0);
+      
+      print("TTS configured successfully for language: $languageCode");
+      
+    } catch (e) {
+      print("TTS configuration error: $e");
+      // Fallback configuration
+      try {
+        await _tts.setLanguage('en-US');
+        await _tts.setSpeechRate(0.75);
+        await _tts.setPitch(1.0);
+      } catch (fallbackError) {
+        print("TTS fallback configuration error: $fallbackError");
+      }
+    }
   }
 
   String _buildNarration() {
@@ -188,13 +218,23 @@ class _CornDetailPageState extends State<CornDetailPage> {
       setState(() => _isSpeaking = false);
       return;
     }
+    
     final narration = _buildNarration().trim();
     if (narration.isEmpty) {
       return;
     }
-    await _configureVoice();
-    setState(() => _isSpeaking = true);
-    await _tts.speak(narration);
+    
+    try {
+      setState(() => _isSpeaking = true);
+      await _configureVoice();
+      
+      print("Starting narration: ${narration.substring(0, math.min(100, narration.length))}...");
+      await _tts.speak(narration);
+      
+    } catch (e) {
+      print("Narration error: $e");
+      setState(() => _isSpeaking = false);
+    }
   }
 
   @override
