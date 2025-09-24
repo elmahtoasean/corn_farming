@@ -30,16 +30,6 @@ class CustomSidebar extends StatelessWidget {
         final isCompact = constraints.maxWidth < 260;
         final navItems = [
           _SidebarItem(
-            icon: Icons.home_rounded,
-            label: 'dashboard'.tr,
-            route: RouteHelper.home,
-          ),
-          _SidebarItem(
-            icon: Icons.person_rounded,
-            label: 'profile'.tr,
-            route: RouteHelper.profile,
-          ),
-          _SidebarItem(
             icon: Icons.notifications_active,
             label: 'sidebar_alerts'.tr,
             route: RouteHelper.alerts,
@@ -128,7 +118,6 @@ class CustomSidebar extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _SidebarHighlight(theme: theme),
                   const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
@@ -149,7 +138,7 @@ class CustomSidebar extends StatelessWidget {
                             );
                           }).toList(),
                           const SizedBox(height: 12),
-                          _SidebarMetrics(theme: theme),
+                          
                         ],
                       ),
                     ),

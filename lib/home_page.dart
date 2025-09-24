@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage>
   Future<void> _configureVoice() async {
     await _tts.setVolume(1.0);
     final localeCode = Get.locale?.languageCode.toLowerCase();
-    final speechRate = localeCode == 'bn' ? 0.36 : 0.45;
+    final speechRate = localeCode == 'bn' ? 0.36 : 1.0;
     await _tts.setSpeechRate(speechRate);
     await _tts.setPitch(1.0);
     await _tts.awaitSpeakCompletion(true);

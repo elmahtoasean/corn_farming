@@ -70,7 +70,6 @@ class ToolGuide extends StatelessWidget {
         'tools_resource_calibration',
         'tools_resource_safety',
       ],
-      videoId: 'tools_video_id'.tr,
     );
   }
 }
