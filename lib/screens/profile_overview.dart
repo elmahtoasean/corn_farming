@@ -70,7 +70,6 @@ class ProfileOverview extends StatelessWidget {
         'profile_resource_weather',
         'profile_resource_sharing',
       ],
-      videoId: 'profile_video_id'.tr,
     );
   }
 }

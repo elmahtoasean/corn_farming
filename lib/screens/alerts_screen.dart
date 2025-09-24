@@ -70,7 +70,6 @@ class AlertsScreen extends StatelessWidget {
         'alerts_resource_extension',
         'alerts_resource_response',
       ],
-      videoId: 'alerts_video_id'.tr, // Ensure 'get' package is imported for 'tr'
     );
   }
 }

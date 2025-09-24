@@ -68,7 +68,6 @@ class Help extends StatelessWidget {
         'support_resource_extension',
         'support_resource_finance',
       ],
-      videoId: 'support_video_id'.tr,
     );
   }
 }
