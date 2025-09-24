@@ -465,6 +465,16 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
+    final baseOnPrimary = theme.colorScheme.onPrimary;
+    final headerTextColor =
+        isDarkTheme ? baseOnPrimary : Color.lerp(baseOnPrimary, Colors.black, 0.35)!;
+    final headerSecondaryTextColor = isDarkTheme
+        ? baseOnPrimary.withOpacity(0.75)
+        : Color.lerp(headerTextColor, Colors.black, 0.2)!;
+    final headerTertiaryTextColor = isDarkTheme
+        ? baseOnPrimary.withOpacity(0.7)
+        : Color.lerp(headerTextColor, Colors.black, 0.35)!;
 
     final modeChip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -478,12 +488,12 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: headerTextColor.withOpacity(isDarkTheme ? 0.18 : 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.eco_rounded,
-              color: theme.colorScheme.onPrimary,
+              color: headerTextColor,
             ),
           ),
           const SizedBox(width: 8),
@@ -494,14 +504,14 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
               Text(
                 isDarkMode ? 'home_mode_dark'.tr : 'home_mode_light'.tr,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onPrimary,
+                  color: headerTextColor,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               Text(
                 'home_card_hint'.tr,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onPrimary.withOpacity(0.75),
+                  color: headerSecondaryTextColor,
                   fontSize: 11,
                 ),
               ),
@@ -528,7 +538,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Icon(
             isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
             key: ValueKey(isNarrating),
-            color: theme.colorScheme.onPrimary,
+            color: headerTextColor,
           ),
         ),
       ),
@@ -552,7 +562,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Icon(
             isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
             key: ValueKey(isDarkMode),
-            color: theme.colorScheme.onPrimary,
+            color: headerTextColor,
           ),
         ),
       ),
@@ -566,7 +576,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: IconButton(
         onPressed: onMenuTap,
         icon: const Icon(Icons.menu_rounded),
-        color: theme.colorScheme.onPrimary,
+        color: headerTextColor,
       ),
     );
 
@@ -579,7 +589,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onPrimary,
+            color: headerTextColor,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -587,14 +597,14 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
         Text(
           'home_appbar_subtitle'.tr,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onPrimary.withOpacity(0.85),
+            color: headerSecondaryTextColor,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           'home_listen_hint'.tr,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onPrimary.withOpacity(0.7),
+            color: headerTertiaryTextColor,
             fontSize: 11,
           ),
         ),
@@ -611,7 +621,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
           final actionsWrap = Wrap(
             spacing: isCompact ? 10 : 12,
             runSpacing: isCompact ? 8 : 10,
-            alignment: isCompact ? WrapAlignment.start : WrapAlignment.end,
+            alignment: WrapAlignment.start,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: actions,
           );
@@ -619,15 +629,16 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
           final rowChildren = <Widget>[
             menuButton,
             const SizedBox(width: 16),
-            Expanded(child: titleBlock),
           ];
 
           if (!isCompact) {
             rowChildren.addAll([
-              const SizedBox(width: 12),
-              Flexible(child: actionsWrap),
+              actionsWrap,
+              const SizedBox(width: 16),
             ]);
           }
+
+          rowChildren.add(Expanded(child: titleBlock));
 
           final headerRow = Row(
             crossAxisAlignment: CrossAxisAlignment.center,

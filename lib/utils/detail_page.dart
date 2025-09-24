@@ -455,21 +455,28 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
+    final baseOnPrimary = theme.colorScheme.onPrimary;
+    final headerTextColor =
+        isDarkTheme ? baseOnPrimary : Color.lerp(baseOnPrimary, Colors.black, 0.35)!;
+    final headerSecondaryTextColor = isDarkTheme
+        ? baseOnPrimary.withOpacity(0.85)
+        : Color.lerp(headerTextColor, Colors.black, 0.2)!;
     final statusText =
         isNarrating ? 'detail_listening'.tr : 'detail_listen'.tr;
 
     final accentBadge = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
+        color: headerTextColor.withOpacity(isDarkTheme ? 0.18 : 0.12),
         shape: BoxShape.circle,
       ),
-      child: Icon(accentIcon, color: Colors.white, size: 26),
+      child: Icon(accentIcon, color: headerTextColor, size: 26),
     );
 
     final listenButton = Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.16),
+        color: headerTextColor.withOpacity(isDarkTheme ? 0.16 : 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: IconButton(
@@ -485,7 +492,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Icon(
             isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
             key: ValueKey(isNarrating),
-            color: Colors.white,
+            color: headerTextColor,
           ),
         ),
       ),
@@ -493,7 +500,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     final themeToggle = Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.16),
+        color: headerTextColor.withOpacity(isDarkTheme ? 0.16 : 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: IconButton(
@@ -509,7 +516,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Icon(
             isDarkMode ? Icons.light_mode_rounded : Icons.nights_stay_rounded,
             key: ValueKey(isDarkMode),
-            color: Colors.white,
+            color: headerTextColor,
           ),
         ),
       ),
@@ -517,13 +524,13 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     final backButton = Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: headerTextColor.withOpacity(isDarkTheme ? 0.15 : 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: IconButton(
         onPressed: onBack,
         icon: const Icon(Icons.arrow_back_rounded),
-        color: Colors.white,
+        color: headerTextColor,
       ),
     );
 
@@ -536,7 +543,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleLarge?.copyWith(
-            color: Colors.white,
+            color: headerTextColor,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -544,7 +551,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
         Text(
           statusText,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.white.withOpacity(0.85),
+            color: headerSecondaryTextColor,
           ),
         ),
       ],
@@ -561,7 +568,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
           final actionsWrap = Wrap(
             spacing: isCompact ? 10 : 12,
             runSpacing: isCompact ? 8 : 10,
-            alignment: isCompact ? WrapAlignment.start : WrapAlignment.end,
+            alignment: WrapAlignment.start,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: actions,
           );
@@ -569,15 +576,16 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
           final rowChildren = <Widget>[
             backButton,
             const SizedBox(width: 14),
-            Expanded(child: titleBlock),
           ];
 
           if (!isCompact) {
             rowChildren.addAll([
-              const SizedBox(width: 12),
-              Flexible(child: actionsWrap),
+              actionsWrap,
+              const SizedBox(width: 16),
             ]);
           }
+
+          rowChildren.add(Expanded(child: titleBlock));
 
           final headerRow = Row(
             crossAxisAlignment: CrossAxisAlignment.center,
