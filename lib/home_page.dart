@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage>
       
       // Set speech parameters based on language
       final localeCode = Get.locale?.languageCode.toLowerCase();
-      final speechRate = localeCode == 'bn' ? 0.36 : 1.0;
+      final speechRate = localeCode == 'bn' ? 0.36 : 0.45;
       
       await _tts.setSpeechRate(speechRate);
       await _tts.setPitch(1.0);
