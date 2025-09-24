@@ -513,8 +513,8 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth < 420 ? 16.0 : 20.0;
-    final verticalPadding = screenWidth < 520 ? 12.0 : 16.0;
+    final horizontalPadding = screenWidth < 420 ? 12.0 : 16.0;
+    final verticalPadding = screenWidth < 520 ? 10.0 : 14.0;
     final statusText =
         isNarrating ? 'detail_listening'.tr : 'detail_listen'.tr;
 

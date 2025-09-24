@@ -485,8 +485,8 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth < 420 ? 4.0 : 8.0;
-    final verticalPadding = screenWidth < 520 ? 3.0 : 5.0;
+    final horizontalPadding = screenWidth < 420 ? 2.0 : 6.0;
+    final verticalPadding = screenWidth < 520 ? 2.0 : 4.0;
 
     final modeChip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

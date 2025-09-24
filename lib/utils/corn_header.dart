@@ -35,13 +35,22 @@ class CornHeaderShell extends StatelessWidget {
     super.key,
     required this.child,
     this.height = 120,
-    this.contentPadding = const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final gradientColors = isDark
+        ? [
+            Color.lerp(theme.colorScheme.primaryContainer, Colors.black, 0.45)!,
+            Color.lerp(theme.colorScheme.primary, Colors.black, 0.6)!,
+          ]
+        : [
+            theme.colorScheme.primaryContainer.withOpacity(0.9),
+            theme.colorScheme.primary.withOpacity(0.55),
+          ];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
@@ -63,12 +72,7 @@ class CornHeaderShell extends StatelessWidget {
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primaryContainer
-                      .withOpacity(isDark ? 0.75 : 0.9),
-                  theme.colorScheme.primary
-                      .withOpacity(isDark ? 0.7 : 0.55),
-                ],
+                colors: gradientColors,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
