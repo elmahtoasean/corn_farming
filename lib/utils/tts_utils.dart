@@ -139,18 +139,29 @@ Future<String> resolveTtsLanguage(
   String defaultLanguage = 'en-US',
 }) async {
   final availableLanguages = await _getAvailableLanguages(tts);
-  
+
   print("Available TTS languages: $availableLanguages");
 
   final candidates = <String>[];
   if (locale != null) {
     final languageCode = locale.languageCode.toLowerCase();
     final countryCode = locale.countryCode;
-    
+
     print("Resolving TTS for locale: $languageCode-$countryCode");
-    
-    // Special handling for Bengali
+
+    // Special handling for Bengali where the web engine often fails to
+    // report availability even though the language can still be set.
     if (languageCode == 'bn') {
+      if (countryCode != null && countryCode.isNotEmpty) {
+        final normalizedCountry = countryCode.toUpperCase();
+        candidates.add('bn-$normalizedCountry');
+        candidates.add('bn_${normalizedCountry}');
+        candidates.add('bn-${countryCode.toLowerCase()}');
+        candidates.add('bn_${countryCode.toLowerCase()}');
+      } else {
+        candidates.add('bn-BD');
+        candidates.add('bn_IN');
+      }
       candidates.addAll(_languageFallbackCandidates['bn']!);
     } else {
       // General language handling
@@ -184,6 +195,13 @@ Future<String> resolveTtsLanguage(
       print("Selected TTS language: $matchedLanguage");
       return matchedLanguage;
     }
+
+    // If the engine incorrectly reports support status (common for Bengali on
+    // the web), still prefer the matched language so it can be attempted later.
+    if (matchedLanguage.toLowerCase().startsWith('bn')) {
+      print("Using matched Bengali language despite unsupported status: $matchedLanguage");
+      return matchedLanguage;
+    }
   }
 
   // Final fallback check
@@ -191,6 +209,10 @@ Future<String> resolveTtsLanguage(
     final isSupported = await _isLanguageSupported(tts, candidate);
     if (isSupported) {
       print("Fallback TTS language: $candidate");
+      return candidate;
+    }
+    if (candidate.toLowerCase().startsWith('bn')) {
+      print("Engine reports Bengali candidate '$candidate' as unavailable; will still attempt later.");
       return candidate;
     }
   }
@@ -213,6 +235,17 @@ bool _didApplyLanguage(dynamic result) {
     return !result.toLowerCase().contains('error');
   }
   return true;
+}
+
+bool _shouldForceLanguageAttempt(String candidate, Locale? locale) {
+  final normalized = candidate.toLowerCase();
+  if (normalized.contains('bn') || normalized.contains('bengali') || normalized.contains('bangla')) {
+    return true;
+  }
+  if (locale != null && locale.languageCode.toLowerCase() == 'bn') {
+    return true;
+  }
+  return false;
 }
 
 Future<String> configureTtsLanguage(
@@ -271,30 +304,41 @@ Future<String> configureTtsLanguage(
 
   for (final candidate in dedupedAttempts) {
     final normalized = candidate.contains('_') ? candidate.replaceAll('_', '-') : candidate;
-    final isSupported = await _supportsLanguage(tts, normalized);
-    
-    if (isSupported) {
-      try {
-        print("Attempting to set TTS language to: $normalized");
-        final result = await tts.setLanguage(normalized);
-        print("TTS setLanguage result: $result");
-        
-        if (_didApplyLanguage(result)) {
-          // Verify the language was actually set
-          try {
-            final currentLang = await tts.getLanguages;
-            print("Current TTS language after setting: $currentLang");
-          } catch (e) {
-            print("Could not verify current language: $e");
-          }
-          
-          print("Successfully configured TTS language: $normalized");
-          return normalized;
-        }
-      } catch (e) {
-        print("Failed to set TTS language $normalized: $e");
+    final forceAttempt = _shouldForceLanguageAttempt(normalized, locale);
+    bool isSupported = false;
+
+    if (!forceAttempt) {
+      isSupported = await _supportsLanguage(tts, normalized);
+      if (!isSupported) {
         continue;
       }
+    } else {
+      isSupported = await _supportsLanguage(tts, normalized);
+      if (!isSupported) {
+        print("Language $normalized not reported as supported, attempting anyway due to Bengali override");
+      }
+    }
+
+    try {
+      print("Attempting to set TTS language to: $normalized");
+      final result = await tts.setLanguage(normalized);
+      print("TTS setLanguage result: $result");
+
+      if (_didApplyLanguage(result)) {
+        // Verify the language was actually set
+        try {
+          final currentLang = await tts.getLanguages;
+          print("Current TTS language after setting: $currentLang");
+        } catch (e) {
+          print("Could not verify current language: $e");
+        }
+
+        print("Successfully configured TTS language: $normalized");
+        return normalized;
+      }
+    } catch (e) {
+      print("Failed to set TTS language $normalized: $e");
+      continue;
     }
   }
 
