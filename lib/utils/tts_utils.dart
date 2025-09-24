@@ -190,17 +190,26 @@ Future<String> resolveTtsLanguage(
 
   final matchedLanguage = _matchLanguage(availableLanguages, dedupedCandidates);
   if (matchedLanguage != null) {
-    final isSupported = await _isLanguageSupported(tts, matchedLanguage);
-    if (isSupported) {
-      print("Selected TTS language: $matchedLanguage");
-      return matchedLanguage;
-    }
+    final normalizedMatch = matchedLanguage.toLowerCase();
+    final requestedLanguage = locale?.languageCode.toLowerCase();
 
-    // If the engine incorrectly reports support status (common for Bengali on
-    // the web), still prefer the matched language so it can be attempted later.
-    if (matchedLanguage.toLowerCase().startsWith('bn')) {
-      print("Using matched Bengali language despite unsupported status: $matchedLanguage");
-      return matchedLanguage;
+    if (requestedLanguage == 'bn' && !normalizedMatch.startsWith('bn')) {
+      print(
+          "Ignoring matched non-Bengali language $matchedLanguage for Bengali locale");
+    } else {
+      final isSupported = await _isLanguageSupported(tts, matchedLanguage);
+      if (isSupported) {
+        print("Selected TTS language: $matchedLanguage");
+        return matchedLanguage;
+      }
+
+      // If the engine incorrectly reports support status (common for Bengali on
+      // the web), still prefer the matched language so it can be attempted later.
+      if (normalizedMatch.startsWith('bn')) {
+        print(
+            "Using matched Bengali language despite unsupported status: $matchedLanguage");
+        return matchedLanguage;
+      }
     }
   }
 
