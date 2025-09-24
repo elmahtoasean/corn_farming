@@ -3,10 +3,14 @@ import 'dart:math' as math;
 import 'package:corn_farming/controller/theme_controller.dart';
 import 'package:corn_farming/utils/corn_header.dart';
 import 'package:corn_farming/utils/tts_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get/get.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+
+import 'video_embed_stub.dart'
+    if (dart.library.html) 'video_embed_web.dart';
 
 class CornDetailSection {
   final IconData icon;
@@ -92,7 +96,7 @@ class _CornDetailPageState extends State<CornDetailPage> {
     super.initState();
     _initTts();
     final videoId = widget.videoId;
-    if (videoId != null && videoId.isNotEmpty) {
+    if (!kIsWeb && videoId != null && videoId.isNotEmpty) {
       _youtubeController = YoutubePlayerController(
         initialVideoId: videoId,
         flags: const YoutubePlayerFlags(
@@ -299,10 +303,12 @@ class _CornDetailPageState extends State<CornDetailPage> {
                                     .toList(),
                                 accentIcon: widget.accentIcon,
                               ),
-                              if (_youtubeController != null) ...[
+                              if (widget.videoId != null &&
+                                  widget.videoId!.isNotEmpty) ...[
                                 SizedBox(height: spacing + 8),
                                 _VideoCard(
-                                  controller: _youtubeController!,
+                                  controller: _youtubeController,
+                                  videoId: widget.videoId!,
                                   title: 'detail_video_title'.tr,
                                   caption: 'detail_video_hint'.tr,
                                 ),
@@ -848,12 +854,14 @@ class _TipChip extends StatelessWidget {
 }
 
 class _VideoCard extends StatelessWidget {
-  final YoutubePlayerController controller;
+  final YoutubePlayerController? controller;
+  final String videoId;
   final String title;
   final String caption;
 
   const _VideoCard({
     required this.controller,
+    required this.videoId,
     required this.title,
     required this.caption,
   });
@@ -861,71 +869,112 @@ class _VideoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (kIsWeb) {
+      return _VideoCardBody(
+        theme: theme,
+        title: title,
+        caption: caption,
+        child: buildYoutubeEmbed(videoId),
+      );
+    }
+
+    final youtubeController = controller;
+    if (youtubeController == null) {
+      return const SizedBox.shrink();
+    }
+
     return YoutubePlayerBuilder(
       player: YoutubePlayer(
-        controller: controller,
+        controller: youtubeController,
         showVideoProgressIndicator: true,
         progressIndicatorColor: theme.colorScheme.primary,
       ),
       builder: (context, player) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.12),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+        return _VideoCardBody(
+          theme: theme,
+          title: title,
+          caption: caption,
+          child: player,
+        );
+      },
+    );
+  }
+}
+
+class _VideoCardBody extends StatelessWidget {
+  final ThemeData theme;
+  final String title;
+  final String caption;
+  final Widget child;
+
+  const _VideoCardBody({
+    required this.theme,
+    required this.title,
+    required this.caption,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.play_circle_fill,
-                        color: theme.colorScheme.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child:
+                    Icon(Icons.play_circle_fill, color: theme.colorScheme.primary),
               ),
-              const SizedBox(height: 14),
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: player,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                caption,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.75),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 14),
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: child,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            caption,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.75),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
