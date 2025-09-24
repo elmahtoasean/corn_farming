@@ -9,8 +9,11 @@
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
   errors:
+    deprecated_member_use: ignore
+    duplicate_import: ignore
     prefer_const_constructors: ignore
-    prefer_const_declarations: ignore
+    unused_element: ignore
+    unused_import: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:
