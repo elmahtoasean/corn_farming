@@ -191,6 +191,7 @@ class _HomePageState extends State<HomePage>
         final media = MediaQuery.of(context);
         final theme = Theme.of(context);
         final sidebarWidth = _sidebarWidth(media.size.width);
+        final appBarHeight = _responsiveHeaderHeight(media.size.width);
 
         return Scaffold(
           backgroundColor: theme.colorScheme.surface,
@@ -247,13 +248,18 @@ class _HomePageState extends State<HomePage>
                     absorbing: isSidebarOpen,
                     child: Scaffold(
                       backgroundColor: theme.colorScheme.surface,
-                      appBar: _CornAppBar(
-                        title: 'home_page'.tr,
-                        onMenuTap: () => setState(() => isSidebarOpen = !isSidebarOpen),
-                        onThemeTap: themeController.toggleThemeMode,
-                        isDarkMode: themeController.isDarkMode,
-                        onNarrationTap: () => _toggleNarration(cards),
-                        isNarrating: _isSpeaking,
+                      appBar: PreferredSize(
+                        preferredSize: Size.fromHeight(appBarHeight),
+                        child: _CornAppBar(
+                          height: appBarHeight,
+                          title: 'home_page'.tr,
+                          onMenuTap: () =>
+                              setState(() => isSidebarOpen = !isSidebarOpen),
+                          onThemeTap: themeController.toggleThemeMode,
+                          isDarkMode: themeController.isDarkMode,
+                          onNarrationTap: () => _toggleNarration(cards),
+                          isNarrating: _isSpeaking,
+                        ),
                       ),
                       body: SafeArea(
                         child: LayoutBuilder(
@@ -384,6 +390,19 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  double _responsiveHeaderHeight(double width) {
+    if (width < 360) {
+      return 220;
+    } else if (width < 520) {
+      return 196;
+    } else if (width < 720) {
+      return 152;
+    } else if (width < 960) {
+      return 140;
+    }
+    return 132;
+  }
+
   double _sidebarWidth(double screenWidth) {
     if (screenWidth < 420) {
       return screenWidth * 0.82;
@@ -449,6 +468,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onNarrationTap;
   final bool isDarkMode;
   final bool isNarrating;
+  final double height;
 
   const _CornAppBar({
     required this.title,
@@ -457,14 +477,18 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onNarrationTap,
     required this.isDarkMode,
     required this.isNarrating,
+    required this.height,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(120);
+  Size get preferredSize => Size.fromHeight(height);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth < 420 ? 16.0 : 20.0;
+    final verticalPadding = screenWidth < 520 ? 12.0 : 16.0;
 
     final modeChip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -604,7 +628,11 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
     final actions = [modeChip, listenButton, themeToggle];
 
     return CornHeaderShell(
-      height: preferredSize.height,
+      height: height,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isCompact = constraints.maxWidth < 520;

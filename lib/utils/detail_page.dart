@@ -89,23 +89,17 @@ class CornDetailPage extends StatefulWidget {
 class _CornDetailPageState extends State<CornDetailPage> {
   final FlutterTts _tts = FlutterTts();
   YoutubePlayerController? _youtubeController;
+  String? _normalizedVideoId;
   bool _isSpeaking = false;
 
   @override
   void initState() {
     super.initState();
     _initTts();
-    final videoId = widget.videoId;
-    if (!kIsWeb && videoId != null && videoId.isNotEmpty) {
-      _youtubeController = YoutubePlayerController(
-        initialVideoId: videoId,
-        flags: const YoutubePlayerFlags(
-          autoPlay: false,
-          mute: false,
-          enableCaption: true,
-          useHybridComposition: true,
-        ),
-      );
+    final videoId = _normalizeVideoId(widget.videoId);
+    _normalizedVideoId = videoId;
+    if (!kIsWeb && videoId != null) {
+      _youtubeController = _createYoutubeController(videoId);
     }
   }
 
@@ -136,6 +130,27 @@ class _CornDetailPageState extends State<CornDetailPage> {
         setState(() => _isSpeaking = false);
       }
     });
+  }
+
+  String? _normalizeVideoId(String? rawVideoId) {
+    final value = rawVideoId?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    final extracted = YoutubePlayer.convertUrlToId(value);
+    return extracted ?? value;
+  }
+
+  YoutubePlayerController _createYoutubeController(String videoId) {
+    return YoutubePlayerController(
+      initialVideoId: videoId,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+        enableCaption: true,
+        useHybridComposition: true,
+      ),
+    );
   }
 
   Future<void> _configureVoice() async {
@@ -212,6 +227,26 @@ class _CornDetailPageState extends State<CornDetailPage> {
     return buffer.toString();
   }
 
+  @override
+  void didUpdateWidget(covariant CornDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final videoId = _normalizeVideoId(widget.videoId);
+    if (videoId == _normalizedVideoId) {
+      return;
+    }
+    _normalizedVideoId = videoId;
+    if (!kIsWeb) {
+      _youtubeController?.dispose();
+      _youtubeController = null;
+      if (videoId != null) {
+        _youtubeController = _createYoutubeController(videoId);
+      }
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> _toggleNarration() async {
     if (_isSpeaking) {
       await _tts.stop();
@@ -249,16 +284,22 @@ class _CornDetailPageState extends State<CornDetailPage> {
     return GetBuilder<ThemeController>(
       builder: (themeController) {
         final theme = Theme.of(context);
+        final screenWidth = MediaQuery.of(context).size.width;
+        final appBarHeight = _responsiveHeaderHeight(screenWidth);
         return Scaffold(
           backgroundColor: theme.colorScheme.surface,
-          appBar: _CornDetailAppBar(
-            title: widget.titleKey.tr,
-            accentIcon: widget.accentIcon,
-            isNarrating: _isSpeaking,
-            onBack: () => Navigator.of(context).maybePop(),
-            onNarrationTap: _toggleNarration,
-            onThemeTap: themeController.toggleThemeMode,
-            isDarkMode: themeController.isDarkMode,
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(appBarHeight),
+            child: _CornDetailAppBar(
+              height: appBarHeight,
+              title: widget.titleKey.tr,
+              accentIcon: widget.accentIcon,
+              isNarrating: _isSpeaking,
+              onBack: () => Navigator.of(context).maybePop(),
+              onNarrationTap: _toggleNarration,
+              onThemeTap: themeController.toggleThemeMode,
+              isDarkMode: themeController.isDarkMode,
+            ),
           ),
           body: Container(
             decoration: BoxDecoration(
@@ -322,6 +363,8 @@ class _CornDetailPageState extends State<CornDetailPage> {
                     timelineMaxWidth,
                   );
 
+                  final videoId = _normalizedVideoId;
+
                   return Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: targetWidth),
@@ -343,12 +386,11 @@ class _CornDetailPageState extends State<CornDetailPage> {
                                     .toList(),
                                 accentIcon: widget.accentIcon,
                               ),
-                              if (widget.videoId != null &&
-                                  widget.videoId!.isNotEmpty) ...[
+                              if (videoId != null) ...[
                                 SizedBox(height: spacing + 8),
                                 _VideoCard(
                                   controller: _youtubeController,
-                                  videoId: widget.videoId!,
+                                  videoId: videoId,
                                   title: 'detail_video_title'.tr,
                                   caption: 'detail_video_hint'.tr,
                                 ),
@@ -430,6 +472,19 @@ class _CornDetailPageState extends State<CornDetailPage> {
   }
 }
 
+double _responsiveHeaderHeight(double width) {
+  if (width < 360) {
+    return 220;
+  } else if (width < 520) {
+    return 196;
+  } else if (width < 720) {
+    return 152;
+  } else if (width < 960) {
+    return 140;
+  }
+  return 132;
+}
+
 class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final IconData accentIcon;
@@ -438,6 +493,7 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onNarrationTap;
   final VoidCallback onThemeTap;
   final bool isDarkMode;
+  final double height;
 
   const _CornDetailAppBar({
     required this.title,
@@ -447,14 +503,18 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onNarrationTap,
     required this.onThemeTap,
     required this.isDarkMode,
+    required this.height,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(120);
+  Size get preferredSize => Size.fromHeight(height);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth < 420 ? 16.0 : 20.0;
+    final verticalPadding = screenWidth < 520 ? 12.0 : 16.0;
     final statusText =
         isNarrating ? 'detail_listening'.tr : 'detail_listen'.tr;
 
@@ -553,11 +613,14 @@ class _CornDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     final actions = [accentBadge, listenButton, themeToggle];
 
     return CornHeaderShell(
-      height: preferredSize.height,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      height: height,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 460;
+          final isCompact = constraints.maxWidth < 520;
           final actionsWrap = Wrap(
             spacing: isCompact ? 10 : 12,
             runSpacing: isCompact ? 8 : 10,
