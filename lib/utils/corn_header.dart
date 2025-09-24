@@ -44,12 +44,12 @@ class CornHeaderShell extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
       child: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.25),
+              color: theme.colorScheme.primary.withOpacity(0.2),
               blurRadius: 26,
               offset: const Offset(0, 14),
             ),
@@ -64,9 +64,10 @@ class CornHeaderShell extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary,
+                  theme.colorScheme.primaryContainer
+                      .withOpacity(isDark ? 0.75 : 0.9),
                   theme.colorScheme.primary
-                      .withOpacity(isDark ? 0.6 : 0.45),
+                      .withOpacity(isDark ? 0.7 : 0.55),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

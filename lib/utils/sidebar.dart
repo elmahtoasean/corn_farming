@@ -28,6 +28,21 @@ class CustomSidebar extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 260;
+        final isDark = theme.brightness == Brightness.dark;
+        final gradientColors = isDark
+            ? [
+                theme.colorScheme.surface.withOpacity(0.95),
+                theme.colorScheme.primaryContainer.withOpacity(0.6),
+                theme.colorScheme.secondaryContainer.withOpacity(0.45),
+                theme.colorScheme.secondary.withOpacity(0.4),
+              ]
+            : [
+                theme.colorScheme.primaryContainer.withOpacity(0.95),
+                theme.colorScheme.primary.withOpacity(0.7),
+                theme.colorScheme.secondaryContainer.withOpacity(0.65),
+                theme.colorScheme.secondary.withOpacity(0.55),
+              ];
+
         final navItems = [
           _SidebarItem(
             icon: Icons.notifications_active,
@@ -55,16 +70,11 @@ class CustomSidebar extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.primary.withOpacity(0.85),
-                theme.colorScheme.secondary,
-                theme.colorScheme.secondary.withOpacity(0.75),
-              ],
+              colors: gradientColors,
             ),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.35),
+                color: theme.colorScheme.primary.withOpacity(0.28),
                 blurRadius: 24,
                 offset: const Offset(6, 12),
               ),

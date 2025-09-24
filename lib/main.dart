@@ -11,7 +11,7 @@ import 'package:corn_farming/utils/material_color.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Map<String, Map<String, String>> languages = await dep.init();
+  final Map<String, Map<String, String>> languages = await dep.init();
   runApp(MyApp(languages: languages));
 }
 
@@ -28,106 +28,121 @@ class MyApp extends StatelessWidget {
           builder: (localizationController) {
             final ColorScheme lightScheme = ColorScheme.fromSeed(
               seedColor: customSwatch,
-              primary: customSwatch.shade600,
-              secondary: const Color(0xFFF6B042),
-              surface: const Color(0xFFFDF3D9),
-              background: const Color(0xFFF9F3E5),
+              brightness: Brightness.light,
+              primary: customSwatch.shade500,
+              onPrimary: Colors.white,
+              primaryContainer: customSwatch.shade200,
+              secondary: const Color(0xFFD6A75B),
+              secondaryContainer: const Color(0xFFF0D9A6),
+              surface: const Color(0xFFF4EFE3),
+              background: const Color(0xFFFBF7ED),
             );
+
             final ColorScheme darkScheme = ColorScheme.fromSeed(
               seedColor: customSwatch,
-              primary: customSwatch.shade300,
-              secondary: const Color(0xFFFFD37A),
-              surface: const Color(0xFF1F2A17),
-              background: const Color(0xFF141C10),
               brightness: Brightness.dark,
+              primary: customSwatch.shade300,
+              onPrimary: const Color(0xFF1A220F),
+              primaryContainer: customSwatch.shade700,
+              secondary: const Color(0xFFB48C3A),
+              secondaryContainer: const Color(0xFF745F2C),
+              surface: const Color(0xFF1A2313),
+              background: const Color(0xFF12190C),
             );
+
             return GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          themeMode: themeController.themeMode,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: lightScheme,
-            scaffoldBackgroundColor: lightScheme.surface,
-            canvasColor: lightScheme.surface,
-            cardColor: Colors.white,
-            textTheme: Theme.of(context).textTheme.apply(
-                  bodyColor: lightScheme.onBackground,
-                  displayColor: lightScheme.onBackground,
+              debugShowCheckedModeBanner: false,
+              themeMode: themeController.themeMode,
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: lightScheme,
+                scaffoldBackgroundColor: lightScheme.surface,
+                canvasColor: lightScheme.surface,
+                cardColor: lightScheme.surface,
+                textTheme: Theme.of(context).textTheme.apply(
+                      bodyColor: lightScheme.onBackground,
+                      displayColor: lightScheme.onBackground,
+                    ),
+                appBarTheme: AppBarTheme(
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: lightScheme.onSurface,
+                  titleTextStyle:
+                      Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: lightScheme.onSurface,
+                          ),
                 ),
-            appBarTheme: AppBarTheme(
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              foregroundColor: lightScheme.onSurface,
-              titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: lightScheme.onSurface,
+                cardTheme: CardTheme(
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
                   ),
-            ),
-            cardTheme: CardThemeData(
-              margin: const EdgeInsets.all(0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              elevation: 8,
-              surfaceTintColor: Colors.transparent,
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: lightScheme.primary.withOpacity(0.3)),
-              ),
-            ),
-            floatingActionButtonTheme: FloatingActionButtonThemeData(
-              backgroundColor: lightScheme.primary,
-              foregroundColor: lightScheme.onPrimary,
-            ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: darkScheme,
-            scaffoldBackgroundColor: darkScheme.surface,
-            canvasColor: darkScheme.surface,
-            cardColor: darkScheme.surface,
-            textTheme: Theme.of(context).textTheme.apply(
-                  bodyColor: darkScheme.onBackground,
-                  displayColor: darkScheme.onBackground,
+                  elevation: 8,
+                  surfaceTintColor: Colors.transparent,
                 ),
-            appBarTheme: AppBarTheme(
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              foregroundColor: darkScheme.onSurface,
-              titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: darkScheme.onSurface,
+                inputDecorationTheme: InputDecorationTheme(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: lightScheme.primary.withOpacity(0.3),
+                    ),
                   ),
-            ),
-            cardTheme: CardThemeData(
-              margin: const EdgeInsets.all(0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                ),
+                floatingActionButtonTheme: FloatingActionButtonThemeData(
+                  backgroundColor: lightScheme.primary,
+                  foregroundColor: lightScheme.onPrimary,
+                ),
               ),
-              elevation: 10,
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: darkScheme.primary.withOpacity(0.4)),
+              darkTheme: ThemeData(
+                useMaterial3: true,
+                colorScheme: darkScheme,
+                scaffoldBackgroundColor: darkScheme.surface,
+                canvasColor: darkScheme.surface,
+                cardColor: darkScheme.surface,
+                textTheme: Theme.of(context).textTheme.apply(
+                      bodyColor: darkScheme.onBackground,
+                      displayColor: darkScheme.onBackground,
+                    ),
+                appBarTheme: AppBarTheme(
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: darkScheme.onSurface,
+                  titleTextStyle:
+                      Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: darkScheme.onSurface,
+                          ),
+                ),
+                cardTheme: CardTheme(
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  elevation: 10,
+                ),
+                inputDecorationTheme: InputDecorationTheme(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: darkScheme.primary.withOpacity(0.4),
+                    ),
+                  ),
+                ),
+                floatingActionButtonTheme: FloatingActionButtonThemeData(
+                  backgroundColor: darkScheme.primary,
+                  foregroundColor: darkScheme.onPrimary,
+                ),
               ),
-            ),
-            floatingActionButtonTheme: FloatingActionButtonThemeData(
-              backgroundColor: darkScheme.primary,
-              foregroundColor: darkScheme.onPrimary,
-            ),
-          ),
-          translations: Messages(languages: languages),
-          locale: localizationController.locale,
-          fallbackLocale: Locale(
-            AppConstants.languages[0].languageCode,
-            AppConstants.languages[0].countryCode,
-          ),
-          initialRoute: RouteHelper.getInitialRoute(),
-          getPages: RouteHelper.routes,
-        );
+              translations: Messages(languages: languages),
+              locale: localizationController.locale,
+              fallbackLocale: Locale(
+                AppConstants.languages[0].languageCode,
+                AppConstants.languages[0].countryCode,
+              ),
+              initialRoute: RouteHelper.getInitialRoute(),
+              getPages: RouteHelper.routes,
+            );
           },
         );
       },
