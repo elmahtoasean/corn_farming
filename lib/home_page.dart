@@ -251,14 +251,12 @@ class _HomePageState extends State<HomePage>
                       appBar: PreferredSize(
                         preferredSize: Size.fromHeight(appBarHeight),
                         child: _CornAppBar(
-                          height: appBarHeight,
+                          height: appBarHeight+10,
                           title: 'home_page'.tr,
                           onMenuTap: () =>
                               setState(() => isSidebarOpen = !isSidebarOpen),
                           onThemeTap: themeController.toggleThemeMode,
                           isDarkMode: themeController.isDarkMode,
-                          onNarrationTap: () => _toggleNarration(cards),
-                          isNarrating: _isSpeaking,
                         ),
                       ),
                       body: SafeArea(
@@ -465,18 +463,18 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback onMenuTap;
   final VoidCallback onThemeTap;
-  final VoidCallback onNarrationTap;
+  // final VoidCallback onNarrationTap;
   final bool isDarkMode;
-  final bool isNarrating;
+  // final bool isNarrating;
   final double height;
 
   const _CornAppBar({
     required this.title,
     required this.onMenuTap,
     required this.onThemeTap,
-    required this.onNarrationTap,
+    // required this.onNarrationTap,
     required this.isDarkMode,
-    required this.isNarrating,
+    // required this.isNarrating,
     required this.height,
   });
 
@@ -487,8 +485,8 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth < 420 ? 16.0 : 20.0;
-    final verticalPadding = screenWidth < 520 ? 12.0 : 16.0;
+    final horizontalPadding = screenWidth < 420 ? 4.0 : 8.0;
+    final verticalPadding = screenWidth < 520 ? 3.0 : 5.0;
 
     final modeChip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -535,28 +533,28 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
 
-    final listenButton = Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.onPrimary.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: IconButton(
-        tooltip: isNarrating ? 'home_listen_stop'.tr : 'home_listen_start'.tr,
-        onPressed: onNarrationTap,
-        icon: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          transitionBuilder: (child, animation) => ScaleTransition(
-            scale: animation,
-            child: child,
-          ),
-          child: Icon(
-            isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
-            key: ValueKey(isNarrating),
-            color: theme.colorScheme.onPrimary,
-          ),
-        ),
-      ),
-    );
+    // final listenButton = Container(
+    //   decoration: BoxDecoration(
+    //     color: theme.colorScheme.onPrimary.withOpacity(0.16),
+    //     borderRadius: BorderRadius.circular(16),
+    //   ),
+    //   // child: IconButton(
+    //   //   // tooltip: isNarrating ? 'home_listen_stop'.tr : 'home_listen_start'.tr,
+    //   //   // onPressed: onNarrationTap,
+    //   //   // icon: AnimatedSwitcher(
+    //   //   //   duration: const Duration(milliseconds: 200),
+    //   //   //   transitionBuilder: (child, animation) => ScaleTransition(
+    //   //   //     scale: animation,
+    //   //   //     child: child,
+    //   //   //   ),
+    //   //     // child: Icon(
+    //   //     //   isNarrating ? Icons.stop_rounded : Icons.volume_up_rounded,
+    //   //     //   key: ValueKey(isNarrating),
+    //   //     //   color: theme.colorScheme.onPrimary,
+    //   //     // ),
+    //   //   ),
+    //   ),
+    // );
 
     final themeToggle = Container(
       decoration: BoxDecoration(
@@ -625,7 +623,7 @@ class _CornAppBar extends StatelessWidget implements PreferredSizeWidget {
       ],
     );
 
-    final actions = [modeChip, listenButton, themeToggle];
+    final actions = [modeChip, themeToggle];
 
     return CornHeaderShell(
       height: height,

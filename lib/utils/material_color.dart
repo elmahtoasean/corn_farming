@@ -6,7 +6,7 @@ Map<int, Color> _colorSwatch = {
   200: const Color(0xFFDFEBA0),
   300: const Color(0xFFCBE176),
   400: const Color(0xFFB5D652),
-  500: const Color(0xFF9CC636),
+  500: const Color.fromARGB(255, 163, 184, 110),
   600: const Color(0xFF7FB12B),
   700: const Color(0xFF649521),
   800: const Color(0xFF4C761A),
